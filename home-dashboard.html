@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Home Dashboard</title>
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#0b2a2c;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --good: rgba(134,239,172,.95);
+      --warn: rgba(253,224,71,.95);
+      --bad: rgba(252,165,165,.95);
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(56,189,248,.25), transparent 55%),
+        radial-gradient(1200px 800px at 80% 0%, rgba(34,197,94,.18), transparent 60%),
+        radial-gradient(1000px 700px at 40% 100%, rgba(168,85,247,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+    }
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 22px 18px 36px;
+    }
+    header{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:14px; margin-bottom: 18px;
+    }
+    .title{
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .title h1{
+      margin:0; font-weight:750; letter-spacing:.2px;
+      font-size: clamp(20px, 3.2vw, 32px);
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size: 13px;
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    }
+    .pill{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      padding:6px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.25fr .9fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 16px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .card .hd .h{
+      display:flex; flex-direction:column; gap:3px;
+    }
+    .card .hd .h .t{
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .card .hd .h .d{
+      color:var(--muted);
+      font-size: 12px;
+    }
+    .card .bd{ padding:14px 16px 16px; }
+
+    .row{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+    .btn{
+      appearance:none; border:1px solid var(--stroke);
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight:650;
+      font-size: 13px;
+    }
+    .btn:hover{ background: rgba(255,255,255,.10); }
+    .btn:active{ transform: translateY(1px); }
+    .input{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding: 9px 10px;
+      border-radius: 12px;
+      min-width: 230px;
+      outline:none;
+    }
+    .input::placeholder{ color: rgba(255,255,255,.45); }
+
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 520px){
+      .kv{ grid-template-columns: 1fr; }
+    }
+    .tile{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 16px;
+      padding: 12px 12px;
+    }
+    .tile .k{ color:var(--muted); font-size:12px; }
+    .tile .v{ font-size: 20px; font-weight:750; margin-top: 4px; }
+
+    .list{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .item{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 14px;
+      padding: 12px 12px;
+      display:flex; justify-content:space-between; gap:10px;
+    }
+    .item .left{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+    .item .name{ font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .item .meta{ color:var(--muted); font-size:12px; }
+    .badge{
+      border:1px solid rgba(255,255,255,.16);
+      padding:6px 10px;
+      border-radius: 999px;
+      font-weight:800;
+      font-size: 12px;
+      white-space:nowrap;
+      align-self:flex-start;
+      background: rgba(0,0,0,.18);
+    }
+    .badge.good{ color: var(--good); }
+    .badge.warn{ color: var(--warn); }
+    .badge.bad{ color: var(--bad); }
+
+    .calendarFrame{
+      width:100%;
+      height: 520px;
+      border:0;
+      border-radius: 14px;
+      overflow:hidden;
+      background: rgba(0,0,0,.18);
+    }
+
+    .small{
+      color:var(--muted);
+      font-size:12px;
+      line-height: 1.4;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>🏡 Home Dashboard</h1>
+        <div class="subtitle">
+          <span class="pill" id="nowPill">Loading time…</span>
+          <span class="pill" id="statusPill">Starting up…</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="refreshBtn">Refresh</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT COLUMN -->
+      <section class="card">
+        <div class="hd">
+          <div class="h">
+            <div class="t">📅 Google Calendar</div>
+            <div class="d">Embed from your Google account (simple + reliable)</div>
+          </div>
+          <div class="row">
+            <button class="btn" id="calendarHelpBtn">How to set up</button>
+          </div>
+        </div>
+        <div class="bd">
+          <!-- Use Google Calendar embed URL here -->
+          <iframe class="calendarFrame" id="calendarFrame" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          <div class="small" id="calendarNote" style="margin-top:10px;"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <section class="card">
+          <div class="hd">
+            <div class="h">
+              <div class="t">🌦️ Weather</div>
+              <div class="d">Viherlaakso, Espoo</div>
+            </div>
+            <div class="row">
+              <span class="pill mono" id="weatherCoordsPill">lat… lon…</span>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="kv">
+              <div class="tile">
+                <div class="k">Now</div>
+                <div class="v" id="wNow">—</div>
+              </div>
+              <div class="tile">
+                <div class="k">Wind</div>
+                <div class="v" id="wWind">—</div>
+              </div>
+              <div class="tile">
+                <div class="k">Today (min / max)</div>
+                <div class="v" id="wMinMax">—</div>
+              </div>
+              <div class="tile">
+                <div class="k">Precip (today)</div>
+                <div class="v" id="wRain">—</div>
+              </div>
+            </div>
+            <div class="small" style="margin-top:10px;">
+              Data source: Open-Meteo (no key required).
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="hd">
+            <div class="h">
+              <div class="t">🚌 HSL Upcoming Buses</div>
+              <div class="d">Stop numbers → next departures</div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="row" style="margin-bottom:10px;">
+              <input class="input mono" id="stopIdsInput" placeholder="e.g. 1140447, 1040129" />
+              <button class="btn" id="saveStopsBtn">Use stops</button>
+            </div>
+            <div class="small" style="margin-bottom:10px;">
+              Tip: Digitransit stop IDs are usually used as <span class="mono">HSL:1140447</span> (we add <span class="mono">HSL:</span> automatically).  [oai_citation:3‡Digitransit](https://digitransit.fi/en/developers/apis/1-routing-api/stops/?utm_source=chatgpt.com)
+            </div>
+            <div class="list" id="busesList">
+              <div class="small">No data yet.</div>
+            </div>
+            <div class="small" style="margin-top:10px;">
+              Note: Digitransit production APIs may require an API key.  [oai_citation:4‡Avoimen datan palvelu](https://hri.fi/data/en_GB/dataset/hsl-reittiopas-api?utm_source=chatgpt.com)
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="hd">
+            <div class="h">
+              <div class="t">⚡ Fortum Spot Pricing</div>
+              <div class="d">Finland spot price + optional Fortum Tarkka margin</div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="kv">
+              <div class="tile">
+                <div class="k">Spot right now</div>
+                <div class="v" id="pNow">—</div>
+              </div>
+              <div class="tile">
+                <div class="k">If Fortum Tarkka margin added</div>
+                <div class="v" id="pNowFortum">—</div>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <span class="pill mono" id="pMeta">Loading…</span>
+            </div>
+
+            <div class="list" id="priceList" style="margin-top:10px;"></div>
+
+            <div class="small" style="margin-top:10px;">
+              Spot data: api.spot-hinta.fi (see Swagger).  [oai_citation:5‡api.spot-hinta.fi](https://api.spot-hinta.fi/swagger/ui?utm_source=chatgpt.com)<br/>
+              Fortum Tarkka shows spot price + <span class="mono">0.59 c/kWh</span> margin (monthly fee not included here).  [oai_citation:6‡Fortum](https://www.fortum.com/fi/sahkoa/en/electricity-for-home/tarkka?utm_source=chatgpt.com)
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+<script>
+/**
+ * =========================
+ *  CONFIG YOU SHOULD EDIT
+ * =========================
+ */
+
+// 1) Google Calendar embed URL (recommended).
+// How to get: Google Calendar → Settings → your calendar → "Integrate calendar" → "Embed code".
+const GOOGLE_CALENDAR_EMBED_URL =
+  "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki";
+
+// 2) Viherlaakso, Espoo coordinates (approx from public coordinate sources).
+// Viherlaakso: ~60.23333, 24.75000  [oai_citation:7‡latitude.to](https://latitude.to/articles-by-country/fi/finland/273133/viherlaakso?utm_source=chatgpt.com)
+const VIHERLAAKSO = { lat: 60.23333, lon: 24.75000, tz: "Europe/Helsinki" };
+
+// 3) HSL stop numbers (comma separated in the UI) - defaults:
+const DEFAULT_HSL_STOP_NUMBERS = ["1140447"];
+
+// Digitransit Routing API endpoint (HSL, GraphQL via GTFS v1)
+const DIGITRANSIT_GRAPHQL_ENDPOINT = "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1"; //  [oai_citation:8‡Digitransit](https://digitransit.fi/en/developers/apis/1-routing-api/?utm_source=chatgpt.com)
+
+// If you have a Digitransit API subscription key, put it here.
+// Otherwise leave empty; it may still work for light usage, but production access can require a key.  [oai_citation:9‡Avoimen datan palvelu](https://hri.fi/data/en_GB/dataset/hsl-reittiopas-api?utm_source=chatgpt.com)
+const DIGITRANSIT_API_KEY = ""; // e.g. "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+// 4) Spot price API (Finland): api.spot-hinta.fi (no key typically needed)  [oai_citation:10‡api.spot-hinta.fi](https://api.spot-hinta.fi/swagger/ui?utm_source=chatgpt.com)
+const SPOT_API_JUST_NOW = "https://api.spot-hinta.fi/JustNow";
+const SPOT_API_TODAY = "https://api.spot-hinta.fi/Today?region=FI";
+
+// Fortum Tarkka margin (c/kWh) per Fortum page  [oai_citation:11‡Fortum](https://www.fortum.com/fi/sahkoa/en/electricity-for-home/tarkka?utm_source=chatgpt.com)
+const FORTUM_TARKKA_MARGIN_CENTS_PER_KWH = 0.59;
+
+
+/**
+ * =========================
+ *  UI HELPERS
+ * =========================
+ */
+const el = (id) => document.getElementById(id);
+function setStatus(text){
+  el("statusPill").textContent = text;
+}
+function fmtTimeHHMM(date){
+  return date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+}
+function badgeClassByMinutes(min){
+  if (min <= 5) return "bad";
+  if (min <= 12) return "warn";
+  return "good";
+}
+function eurosPerMWhToCentsPerKWh(eurPerMWh){
+  // 1 MWh = 1000 kWh, so EUR/MWh ÷ 10 = c/kWh
+  return eurPerMWh / 10;
+}
+function round(n, digits=2){
+  const p = Math.pow(10, digits);
+  return Math.round(n*p)/p;
+}
+function htmlEscape(s){
+  return (s ?? "").toString()
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+/**
+ * =========================
+ *  GOOGLE CALENDAR
+ * =========================
+ */
+function initCalendar(){
+  const frame = el("calendarFrame");
+  frame.src = GOOGLE_CALENDAR_EMBED_URL;
+
+  const looksConfigured = !GOOGLE_CALENDAR_EMBED_URL.includes("YOUR_CALENDAR_ID");
+  el("calendarNote").innerHTML = looksConfigured
+    ? `<span class="small">Calendar loaded via Google embed URL.</span>`
+    : `<span class="small">
+        Set <span class="mono">GOOGLE_CALENDAR_EMBED_URL</span> at the top of this file.<br/>
+        Click “How to set up” for steps.
+       </span>`;
+}
+
+function showCalendarHelp(){
+  alert(
+`Google Calendar setup (easy embed):
+
+1) Open Google Calendar on desktop
+2) Settings → select your calendar
+3) "Integrate calendar" → copy the "Embed code" link
+4) Paste that link into GOOGLE_CALENDAR_EMBED_URL in this HTML
+
+Note:
+- If the calendar is not public/shared correctly, Google may show an access error.
+- For truly private “read events in JS”, you’d need OAuth + Google Calendar API (more complex than an iframe).`
+  );
+}
+
+/**
+ * =========================
+ *  WEATHER (OPEN-METEO)
+ * =========================
+ */
+async function loadWeather(){
+  const {lat, lon, tz} = VIHERLAAKSO;
+  el("weatherCoordsPill").textContent = `lat ${lat.toFixed(5)} • lon ${lon.toFixed(5)}`;
+
+  // Open-Meteo forecast endpoint (no key)  [oai_citation:12‡open-meteo.com](https://open-meteo.com/?utm_source=chatgpt.com)
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.searchParams.set("latitude", lat);
+  url.searchParams.set("longitude", lon);
+  url.searchParams.set("timezone", tz);
+  url.searchParams.set("current", "temperature_2m,apparent_temperature,wind_speed_10m,weather_code");
+  url.searchParams.set("daily", "temperature_2m_min,temperature_2m_max,precipitation_sum");
+  url.searchParams.set("forecast_days", "3");
+
+  const res = await fetch(url.toString());
+  if(!res.ok) throw new Error("Weather fetch failed");
+  const data = await res.json();
+
+  const t = data.current?.temperature_2m;
+  const feels = data.current?.apparent_temperature;
+  const wind = data.current?.wind_speed_10m;
+
+  const tMin = data.daily?.temperature_2m_min?.[0];
+  const tMax = data.daily?.temperature_2m_max?.[0];
+  const rain = data.daily?.precipitation_sum?.[0];
+
+  el("wNow").textContent = (t != null && feels != null) ? `${round(t,1)}°C (feels ${round(feels,1)}°C)` : "—";
+  el("wWind").textContent = (wind != null) ? `${round(wind,1)} m/s` : "—";
+  el("wMinMax").textContent = (tMin != null && tMax != null) ? `${round(tMin,1)}° / ${round(tMax,1)}°` : "—";
+  el("wRain").textContent = (rain != null) ? `${round(rain,1)} mm` : "—";
+}
+
+/**
+ * =========================
+ *  HSL UPCOMING DEPARTURES (DIGITRANSIT GraphQL)
+ * =========================
+ */
+function getStopsFromUIOrDefault(){
+  const raw = el("stopIdsInput").value.trim();
+  const arr = raw
+    ? raw.split(",").map(s => s.trim()).filter(Boolean)
+    : DEFAULT_HSL_STOP_NUMBERS.slice();
+  return arr;
+}
+
+async function digitransitQuery(query){
+  const headers = {
+    "Content-Type": "application/json"
+  };
+  if (DIGITRANSIT_API_KEY){
+    headers["digitransit-subscription-key"] = DIGITRANSIT_API_KEY;
+  }
+  const res = await fetch(DIGITRANSIT_GRAPHQL_ENDPOINT, {
+    method:"POST",
+    headers,
+    body: JSON.stringify({ query })
+  });
+  if(!res.ok) throw new Error("HSL API fetch failed");
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors.map(e=>e.message).join("; "));
+  return json.data;
+}
+
+function unixFromServiceDay(serviceDay, secondsSinceMidnight){
+  // serviceDay is "Unix timestamp (local timezone) of the departure date"
+  // seconds are seconds since midnight of that date  [oai_citation:13‡Digitransit](https://digitransit.fi/en/developers/apis/1-routing-api/stops/?utm_source=chatgpt.com)
+  return (serviceDay + secondsSinceMidnight) * 1000;
+}
+
+async function loadBuses(){
+  const stopNumbers = getStopsFromUIOrDefault();
+  el("busesList").innerHTML = "";
+
+  for (const stopNum of stopNumbers){
+    const stopId = `HSL:${stopNum}`;
+    // Query examples based on Digitransit stops docs  [oai_citation:14‡Digitransit](https://digitransit.fi/en/developers/apis/1-routing-api/stops/?utm_source=chatgpt.com)
+    const q = `{
+      stop(id: "${stopId}") {
+        name
+        code
+        stoptimesWithoutPatterns(numberOfDepartures: 6) {
+          scheduledDeparture
+          realtimeDeparture
+          departureDelay
+          realtime
+          serviceDay
+          headsign
+          trip { route { shortName } }
+        }
+      }
+    }`;
+
+    let data;
+    try{
+      data = await digitransitQuery(q);
+    }catch(err){
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div class="left">
+          <div class="name">Stop ${htmlEscape(stopNum)} <span class="mono">(${htmlEscape(stopId)})</span></div>
+          <div class="meta">Could not load departures: ${htmlEscape(err.message)}</div>
+        </div>
+        <div class="badge bad">API</div>
+      `;
+      el("busesList").appendChild(div);
+      continue;
+    }
+
+    const stop = data?.stop;
+    if(!stop){
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div class="left">
+          <div class="name">Stop ${htmlEscape(stopNum)} <span class="mono">(${htmlEscape(stopId)})</span></div>
+          <div class="meta">Stop not found.</div>
+        </div>
+        <div class="badge warn">N/A</div>
+      `;
+      el("busesList").appendChild(div);
+      continue;
+    }
+
+    const now = Date.now();
+    const rows = (stop.stoptimesWithoutPatterns || []).map(st => {
+      const sec = (st.realtime ? st.realtimeDeparture : st.scheduledDeparture);
+      const tMs = unixFromServiceDay(st.serviceDay, sec);
+      const mins = Math.max(0, Math.round((tMs - now)/60000));
+      return {
+        route: st.trip?.route?.shortName || "",
+        headsign: st.headsign || "",
+        mins,
+        time: new Date(tMs),
+        realtime: !!st.realtime,
+        delay: st.departureDelay || 0
+      };
+    }).sort((a,b)=>a.mins-b.mins).slice(0,6);
+
+    const lines = rows.length
+      ? rows.map(r => {
+          const rt = r.realtime ? "RT" : "SCH";
+          const delayTxt = (r.realtime && r.delay) ? ` (+${Math.round(r.delay/60)}m)` : "";
+          return `${r.route} → ${r.headsign} • ${fmtTimeHHMM(r.time)} (${r.mins}m) ${rt}${delayTxt}`;
+        }).join("  |  ")
+      : "No departures found.";
+
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="left">
+        <div class="name">${htmlEscape(stop.name)} <span class="mono">(${htmlEscape(stopId)})</span></div>
+        <div class="meta">${htmlEscape(lines)}</div>
+      </div>
+      <div class="badge ${badgeClassByMinutes(rows[0]?.mins ?? 999)}">${rows[0]?.mins ?? "—"}m</div>
+    `;
+    el("busesList").appendChild(div);
+  }
+}
+
+/**
+ * =========================
+ *  SPOT PRICE (Spot-hinta.fi) + "Fortum Tarkka" margin
+ * =========================
+ */
+async function loadSpot(){
+  const [nowRes, todayRes] = await Promise.all([
+    fetch(SPOT_API_JUST_NOW),
+    fetch(SPOT_API_TODAY)
+  ]);
+  if(!nowRes.ok || !todayRes.ok) throw new Error("Spot price fetch failed");
+
+  const nowJson = await nowRes.json();
+  const todayJson = await todayRes.json();
+
+  // Spot-hinta.fi commonly returns EUR/MWh fields; handle a few likely shapes.
+  // We’ll try to detect a numeric "PriceWithTax" / "PriceNoTax" / "Price" etc.
+  function pickNumber(obj, keys){
+    for (const k of keys){
+      const v = obj?.[k];
+      if (typeof v === "number" && isFinite(v)) return v;
+      if (typeof v === "string" && isFinite(Number(v))) return Number(v);
+    }
+    return null;
+  }
+
+  // "JustNow": expect EUR/MWh
+  const eurMwhNow =
+    pickNumber(nowJson, ["PriceWithTax", "PriceNoTax", "Price", "priceWithTax", "priceNoTax", "price"]) ??
+    pickNumber(nowJson?.data, ["PriceWithTax","PriceNoTax","Price"]);
+
+  const cKwhNow = (eurMwhNow != null) ? eurosPerMWhToCentsPerKWh(eurMwhNow) : null;
+
+  el("pNow").textContent = (cKwhNow != null) ? `${round(cKwhNow,2)} c/kWh` : "—";
+
+  const fortumNow = (cKwhNow != null) ? (cKwhNow + FORTUM_TARKKA_MARGIN_CENTS_PER_KWH) : null;
+  el("pNowFortum").textContent = (fortumNow != null)
+    ? `${round(fortumNow,2)} c/kWh`
+    : "—";
+
+  el("pMeta").textContent =
+    (eurMwhNow != null)
+      ? `Now: ${round(eurMwhNow,2)} €/MWh → ${round(cKwhNow,2)} c/kWh`
+      : "Now: (unknown format from API)";
+
+  // "Today": expect array of hourly prices. We'll try a few shapes:
+  const arr =
+    (Array.isArray(todayJson) ? todayJson : null) ||
+    (Array.isArray(todayJson?.Prices) ? todayJson.Prices : null) ||
+    (Array.isArray(todayJson?.prices) ? todayJson.prices : null) ||
+    (Array.isArray(todayJson?.data) ? todayJson.data : null) ||
+    [];
+
+  // Render next 8 entries from "now"
+  const nowTs = Date.now();
+  const normalized = arr.map(x => {
+    const start =
+      pickNumber(x, ["StartDate", "startDate", "start", "time", "Timestamp", "timestamp"]) ||
+      null;
+
+    // Sometimes StartDate is ISO string:
+    const startIso = (typeof x?.StartDate === "string") ? Date.parse(x.StartDate)
+                  : (typeof x?.startDate === "string") ? Date.parse(x.startDate)
+                  : (typeof x?.start === "string") ? Date.parse(x.start)
+                  : (typeof x?.time === "string") ? Date.parse(x.time)
+                  : null;
+
+    const tMs = (startIso != null && !Number.isNaN(startIso)) ? startIso
+              : (start != null ? start : null);
+
+    const eurMwh =
+      pickNumber(x, ["PriceWithTax", "PriceNoTax", "Price", "priceWithTax","priceNoTax","price"]) ??
+      null;
+
+    const cKwh = (eurMwh != null) ? eurosPerMWhToCentsPerKWh(eurMwh) : null;
+
+    return { tMs, eurMwh, cKwh };
+  }).filter(r => r.tMs != null && r.cKwh != null)
+    .sort((a,b)=>a.tMs-b.tMs);
+
+  const upcoming = normalized.filter(r => r.tMs >= nowTs).slice(0, 8);
+
+  const wrap = el("priceList");
+  wrap.innerHTML = "";
+  if (!upcoming.length){
+    wrap.innerHTML = `<div class="small">Could not parse hourly list from Spot-hinta.fi response.</div>`;
+    return;
+  }
+
+  for (const r of upcoming){
+    const d = new Date(r.tMs);
+    const c = r.cKwh;
+    const cls = c <= 5 ? "good" : c <= 12 ? "warn" : "bad";
+
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="left">
+        <div class="name">${fmtTimeHHMM(d)}</div>
+        <div class="meta">${round(r.eurMwh,2)} €/MWh → ${round(c,2)} c/kWh</div>
+      </div>
+      <div class="badge ${cls}">${round(c,2)} c</div>
+    `;
+    wrap.appendChild(div);
+  }
+}
+
+/**
+ * =========================
+ *  REFRESH + BOOT
+ * =========================
+ */
+function tickClock(){
+  const d = new Date();
+  el("nowPill").textContent = d.toLocaleString([], {
+    weekday:"short", year:"numeric", month:"short", day:"2-digit",
+    hour:"2-digit", minute:"2-digit"
+  });
+}
+
+async function refreshAll(){
+  try{
+    setStatus("Refreshing…");
+    await Promise.allSettled([loadWeather(), loadBuses(), loadSpot()]);
+    setStatus("Up to date ✅");
+  }catch(e){
+    setStatus("Some data failed ⚠️");
+  }
+}
+
+(function boot(){
+  tickClock();
+  setInterval(tickClock, 15_000);
+
+  initCalendar();
+
+  el("refreshBtn").addEventListener("click", refreshAll);
+  el("calendarHelpBtn").addEventListener("click", showCalendarHelp);
+
+  el("saveStopsBtn").addEventListener("click", async () => {
+    await loadBuses();
+  });
+
+  // Pre-fill stops input:
+  el("stopIdsInput").value = DEFAULT_HSL_STOP_NUMBERS.join(", ");
+
+  refreshAll();
+})();
+</script>
+</body>
+</html>

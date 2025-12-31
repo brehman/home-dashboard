@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HSL Departures + Electricity Prices</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; }
+    .section { margin-bottom: 30px; }
+    #departures .departure, .prices .pricehour {
+      background: #fff; padding: 8px 12px; margin: 4px 0; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .time { font-weight: bold; width: 60px; display:inline-block; }
+    .line { width: 60px; display:inline-block; font-weight:600; color:#0064c8; }
+    .headsign { display:inline-block; }
+    .pricehour { display: flex; justify-content: space-between; padding: 6px; }
+    .pricehour span { width:120px; display:inline-block; }
+  </style>
+</head>
+<body>
+
+  <div class="section">
+    <h2 id="stopName">Loading HSL departures…</h2>
+    <div id="departures"></div>
+  </div>
+
+  <div class="section prices">
+    <h2>Electricity Spot Prices</h2>
+    <div id="todayPrices"><strong>Today’s Prices</strong></div>
+    <div id="tomorrowPrices"><strong>Tomorrow’s Prices</strong></div>
+  </div>
+
+  <script src="https://www.sahkonhintatanaan.fi/api/v1/iframeResizer.min.js"></script>
+<iframe title="Sähkön hinnat toimittaa sahkonhintatanaan.fi" src="https://www.sahkonhintatanaan.fi?mode=embed" style="width:100%;height:800px;border:0;" onload="iFrameResize({heightCalculationMethod: 'taggedElement', checkOrigin: false}, this);"></iframe>
+<p>Sähkön hinnat toimittaa <a href="https://www.sahkonhintatanaan.fi">sahkonhintatanaan.fi</a></p>
+
+<script>
+  // HSL config
+  const HSL_API_KEY = "90b312641ab7489c8154c9083819329c";
+  const STOP_ID = "HSL:2151204";
+  const HSL_ENDPOINT = "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1";
+
+  function formatTime(epochSeconds) {
+    const d = new Date(epochSeconds * 1000);
+    return d.toLocaleTimeString("fi-FI", {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Helsinki'});
+  }
+
+  async function loadDepartures() {
+    const query = `
+      query StopTimes($id:String!, $n:Int!) {
+        stop(id:$id) {
+          name
+          stoptimesWithoutPatterns(numberOfDepartures:$n) {
+            serviceDay scheduledDeparture realtimeDeparture realtime headsign pickupType
+            trip { routeShortName }
+          }
+        }
+      }`;
+    const res = await fetch(HSL_ENDPOINT, {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "digitransit-subscription-key":HSL_API_KEY
+      },
+      body: JSON.stringify({query, variables:{id:STOP_ID, n:10}})
+    });
+    const json = await res.json();
+    if(json.data && json.data.stop) {
+      document.getElementById("stopName").textContent = "Departures – "+json.data.stop.name;
+      const cont = document.getElementById("departures");
+      cont.innerHTML = "";
+      json.data.stop.stoptimesWithoutPatterns
+      .filter(st=>st.pickupType!=="NONE")
+      .forEach(st=>{
+        const scheduled = st.serviceDay + st.scheduledDeparture;
+        const realtime = st.serviceDay + st.realtimeDeparture;
+        const t = st.realtime ? realtime : scheduled;
+        const div = document.createElement("div");
+        div.className="departure";
+        div.innerHTML = `<span class="time">${formatTime(t)}</span>
+                         <span class="line">${st.trip?.routeShortName||""}</span>
+                         <span class="headsign">${st.headsign||""}${st.realtime?" (RT)":""}</span>`;
+        cont.appendChild(div);
+      });
+    }
+  }
+
+  // Spot prices
+  function fetchSpot(dateStr, containerId) {
+    const url = `https://www.sahkonhintatanaan.fi/api/v1/prices/${dateStr}.json`;
+    fetch(url).then(r => r.json()).then(data => {
+      const cont = document.getElementById(containerId);
+      if(!data || !Array.isArray(data)) {
+        cont.innerHTML += "<div>Not available</div>";
+        return;
+      }
+      data.forEach(item => {
+        const d = new Date(item.date);
+        const hr = d.toLocaleTimeString("fi-FI", {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Helsinki'});
+        const div = document.createElement("div");
+        div.className="pricehour";
+        div.innerHTML = `<span>${hr}</span> <span>${item.price.toFixed(2)} €/MWh</span>`;
+        cont.appendChild(div);
+      });
+    }).catch(err => {
+      document.getElementById(containerId).innerHTML += "<div>Error loading prices</div>";
+    });
+  }
+
+  // Load
+  loadDepartures();
+
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  fetchSpot(`${yyyy}/${mm}-${dd}`, "todayPrices");
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate()+1);
+  const tyyyy=tomorrow.getFullYear();
+  const tmm=String(tomorrow.getMonth()+1).padStart(2,'0');
+  const tdd=String(tomorrow.getDate()).padStart(2,'0');
+  fetchSpot(`${tyyyy}/${tmm}-${tdd}`, "tomorrowPrices");
+
+</script>
+</body>
+</html>
