@@ -288,7 +288,6 @@
     .mid{
       font-size: 22px;
       font-weight: 700;
-    reminders: 2
     }
     .muted{ color: var(--muted); }
 
@@ -476,6 +475,60 @@
     }
 
     /* Page 4 iframe columns */
+    /* PAGE 4: Detailed HSL (direct values, no iframes) */
+.routesCols{
+  height:100%;
+  display:grid;
+  gap: var(--pad);
+  align-items:stretch;
+  min-height:0;
+}
+.routesCols3{
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.stopRow{
+  min-height:0;
+  border-radius: 18px;
+  border:1px solid rgba(148,163,184,.14);
+  background: rgba(2,6,23,.18);
+  padding: 14px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:hidden;
+}
+.stopTitle{
+  font-size:32px;           /* doubled */
+  font-weight:900;
+  letter-spacing:.3px;
+}
+.times{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  min-height:0;
+  overflow:auto;
+  padding-right:6px;
+}
+.timePill{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding: 18px 20px;       /* increased padding for balance */
+  border-radius: 18px;
+  border:1px solid rgba(148,163,184,.14);
+  background: rgba(15,23,42,.42);
+  font-weight:900;
+  font-size:32px;           /* doubled */
+}
+.timeMeta{
+  font-size:26px;           /* doubled */
+  font-weight:800;
+  color: var(--muted);
+  white-space:nowrap;
+}
+.small{ font-size: 24px; }  /* doubled */
     .three-cols{
       height:100%;
       display:grid;
@@ -685,49 +738,40 @@
         </div>
       </section>
 
-      <!-- PAGE 4: DETAILED HSL (3 iframe columns) -->
-      <section class="page" id="page3" aria-label="Detailed HSL">
-        <div class="three-cols">
-          <div class="card">
-            <div class="hdr">
-              <h2>Kavallinmäki</h2>
-              <div class="sub">HSL Reittiopas</div>
-            </div>
-            <div class="body">
-              <div class="iframe-wrap">
-                <iframe id="iframeStop1" title="Kavallinmäki stop"
-                        loading="lazy" referrerpolicy="no-referrer"></iframe>
-              </div>
-            </div>
-          </div>
+<!-- PAGE 4: DETAILED HSL (direct values, no iframes) -->
+<section class="page" id="page3" aria-label="Detailed HSL">
+  <div class="card" id="hslCardFull" style="height:100%;">
+    <div class="hdr">
+      <h2>HSL — Detailed</h2>
+      <div class="sub" id="hslFullSub">Loading…</div>
+    </div>
 
-          <div class="card">
-            <div class="hdr">
-              <h2>Viherlaaksontori</h2>
-              <div class="sub">HSL Reittiopas</div>
-            </div>
-            <div class="body">
-              <div class="iframe-wrap">
-                <iframe id="iframeStop2" title="Viherlaaksontori stop"
-                        loading="lazy" referrerpolicy="no-referrer"></iframe>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="hdr">
-              <h2>Leppävaara → Helsinki</h2>
-              <div class="sub">HSL Reittiopas</div>
-            </div>
-            <div class="body">
-              <div class="iframe-wrap">
-                <iframe id="iframeStop3" title="Leppävaara stop"
-                        loading="lazy" referrerpolicy="no-referrer"></iframe>
-              </div>
-            </div>
+    <div class="body" style="height: calc(100% - 54px); min-height:0;">
+      <div class="routesCols routesCols3">
+        <div class="stopRow">
+          <div class="stopTitle"><b>Kavallinmäki</b></div>
+          <div class="times" id="kavallinmakiTimes">
+            <span class="small muted">Loading…</span>
           </div>
         </div>
-      </section>
+
+        <div class="stopRow">
+          <div class="stopTitle"><b>Viherlaaksontori</b></div>
+          <div class="times" id="viherlaaksontoriTimes">
+            <span class="small muted">Loading…</span>
+          </div>
+        </div>
+
+        <div class="stopRow">
+          <div class="stopTitle"><b>Leppävaara → Helsinki</b></div>
+          <div class="times" id="leppavaaraHkiTimes">
+            <span class="small muted">Loading…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
     </div>
   </main>
@@ -769,13 +813,14 @@
       },
 
       HSL: {
-        endpoint: "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1",
+        // ✅ Updated per your request: use GraphQL URL + key
+        graphqlUrl: "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1",
         apiKey: "90b312641ab7489c8154c9083819329c",
         stops: [
-          { id: "HSL:2151204", label: "Kavallinmäki", format: "Bus {routeShortName} leaves in {mins} mins" },
-          { id: "HSL:2151208", label: "Viherlaaksontori", format: "Bus {routeShortName} leaves in {mins} mins" },
-          { id: "HSL:2111552", label: "Leppävaara → Helsinki", format: "Train {routeShortName} leaves in {mins} mins from Leppävaara" }
-        ],
+  { id: "HSL:2151204", label: "Kavallinmäki", format: "Bus {routeShortName} leaves in {mins} mins", target: "kavallinmakiTimes" },
+  { id: "HSL:2151208", label: "Viherlaaksontori", format: "Bus {routeShortName} leaves in {mins} mins", target: "viherlaaksontoriTimes" },
+  { id: "HSL:2111552", label: "Leppävaara → Helsinki", format: "Train {routeShortName} leaves in {mins} mins from Leppävaara", target: "leppavaaraHkiTimes" }
+],
         departuresPerStop: 5
       },
 
@@ -956,8 +1001,6 @@
             const obj = JSON.parse(w);
             if (obj && obj.data && obj.savedAtMs){
               state.weather = obj.data;
-              // Keep showing it immediately; status becomes "init" until we confirm fresh
-              // but UI will label as cached/stale based on age.
             }
           }
         }catch(e){ /* ignore */ }
@@ -1032,18 +1075,16 @@
           state.weatherNextTryMs = 0;
 
           cache.saveWeather();
-          render.weather();     // update card
-          theme.apply();        // refine theme now that we have weather
+          render.weather();
+          theme.apply();
 
         }catch(err){
-          // Mark down but keep UI alive using cached data (if any)
           state.weatherStatus = "down";
-          // Backoff schedule
           state.weatherBackoffMs = utils.nextBackoff(state.weatherBackoffMs);
           state.weatherNextTryMs = Date.now() + state.weatherBackoffMs;
 
-          render.weather();     // show error badge
-          theme.apply();        // fall showing time-of-day only (still ok)
+          render.weather();
+          theme.apply();
 
         }finally{
           render.statusBar();
@@ -1072,8 +1113,9 @@
             n: CONFIG.HSL.departuresPerStop
           };
 
+          // ✅ Updated: use CONFIG.HSL.graphqlUrl (instead of endpoint)
           const json = await utils.postJSON(
-            CONFIG.HSL.endpoint,
+            CONFIG.HSL.graphqlUrl,
             { query: api.hslQuery(), variables: vars },
             { "digitransit-subscription-key": CONFIG.HSL.apiKey },
             CONFIG.FETCH_TIMEOUT_MS
@@ -1083,41 +1125,56 @@
           const data = json.data;
           if (!data) throw new Error("Missing data");
 
-          // Compute soonest departure per stop
           const nowMs = Date.now();
 
-          function soonest(aliasObj){
-            const list = aliasObj && aliasObj.stoptimesWithoutPatterns ? aliasObj.stoptimesWithoutPatterns : [];
-            let best = null;
+function normalizeList(aliasObj){
+  const list = aliasObj && aliasObj.stoptimesWithoutPatterns ? aliasObj.stoptimesWithoutPatterns : [];
+  const out = [];
+  for (const st of list){
+    if (!st) continue;
+    const serviceDayMs = (st.serviceDay || 0) * 1000;
+    const depSec = st.realtime ? st.realtimeDeparture : st.scheduledDeparture;
+    const depMs = serviceDayMs + (depSec || 0) * 1000;
+    const mins = Math.max(0, Math.floor((depMs - nowMs) / 60000));
+    const routeShortName = st.trip && st.trip.routeShortName ? st.trip.routeShortName : "?";
+    out.push({ routeShortName, mins, departureMs: depMs, realtime: !!st.realtime });
+  }
+  out.sort((x,y) => (x.departureMs||0) - (y.departureMs||0));
+  return out.slice(0, CONFIG.HSL.departuresPerStop);
+}
 
-            for (const st of list){
-              if (!st) continue;
-              const serviceDay = (st.serviceDay || 0) * 1000;
-              const depSec = st.realtime ? st.realtimeDeparture : st.scheduledDeparture;
-              const depMs = serviceDay + (depSec || 0) * 1000;
+function pickSoonest(list){
+  return list && list.length ? list[0] : null;
+}
 
-              // compute minutes (never negative)
-              const mins = Math.max(0, Math.floor((depMs - nowMs) / 60000));
-              const routeShortName = st.trip && st.trip.routeShortName ? st.trip.routeShortName : "?";
+const listA = normalizeList(data.a);
+const listB = normalizeList(data.b);
+const listC = normalizeList(data.c);
 
-              if (!best || depMs < best.departureMs){
-                best = { routeShortName, mins, departureMs: depMs };
-              }
-            }
-            return best;
-          }
+const soonA = pickSoonest(listA);
+const soonB = pickSoonest(listB);
+const soonC = pickSoonest(listC);
 
-          const a = soonest(data.a);
-          const b = soonest(data.b);
-          const c = soonest(data.c);
+// Page 1: 1 row per stop (soonest)
+const perStopSoonest = [
+  { ...stops[0], ...(soonA || { routeShortName:"?", mins:"—", departureMs: 0 }) },
+  { ...stops[1], ...(soonB || { routeShortName:"?", mins:"—", departureMs: 0 }) },
+  { ...stops[2], ...(soonC || { routeShortName:"?", mins:"—", departureMs: 0 }) }
+];
 
-          const perStop = [
-            { id: stops[0].id, label: stops[0].label, format: stops[0].format, ...(a || { routeShortName:"?", mins:"—", departureMs: 0 }) },
-            { id: stops[1].id, label: stops[1].label, format: stops[1].format, ...(b || { routeShortName:"?", mins:"—", departureMs: 0 }) },
-            { id: stops[2].id, label: stops[2].label, format: stops[2].format, ...(c || { routeShortName:"?", mins:"—", departureMs: 0 }) },
-          ];
+// Page 4: next N departures per stop
+const perStopLists = [
+  { ...stops[0], list: listA },
+  { ...stops[1], list: listB },
+  { ...stops[2], list: listC }
+];
 
-          state.hsl = { perStop, fetchedAtMs: Date.now() };
+state.hsl = {
+  perStop: perStopSoonest,
+  perStopLists: perStopLists,
+  fetchedAtMs: Date.now()
+};
+
           state.hslStatus = "ok";
           state.hslLastSuccessMs = Date.now();
           state.hslBackoffMs = CONFIG.BACKOFF.START_MS;
@@ -1125,6 +1182,7 @@
 
           cache.saveHsl();
           render.hsl();
+          render.hslDetailed();
 
         }catch(err){
           state.hslStatus = "down";
@@ -1132,6 +1190,7 @@
           state.hslNextTryMs = Date.now() + state.hslBackoffMs;
 
           render.hsl();
+          render.hslDetailed();
 
         }finally{
           render.statusBar();
@@ -1141,7 +1200,6 @@
 
     /***********************************************************************
      * RENDER (page render functions)
-     * - Keep DOM writes minimal and only when changes are detected.
      ***********************************************************************/
     const render = {
       statusBar(){
@@ -1153,7 +1211,6 @@
         const hslText= utils.el("hslText");
         const paused = utils.el("pausedIndicator");
 
-        // Build a "render key" to avoid rewriting if nothing changed
         const key = [
           state.online,
           state.weatherStatus, state.weatherLastSuccessMs, state.weather?.fetchedAtMs || 0,
@@ -1164,11 +1221,9 @@
         if (state.lastRenderKey.status === key) return;
         state.lastRenderKey.status = key;
 
-        // Network
         utils.setText(netText, `Network: ${state.online ? "Online" : "Offline"}`);
         netDot.className = "dot " + (state.online ? "good" : "bad");
 
-        // Weather
         const wxAge = state.weather?.fetchedAtMs ? utils.ageLabel(state.weather.fetchedAtMs) : "—";
         const wxLast = state.weatherLastSuccessMs ? utils.fmtTime(new Date(state.weatherLastSuccessMs), { hour:"2-digit", minute:"2-digit" }) : "—";
         const wxUp = (state.weatherStatus === "ok");
@@ -1176,7 +1231,6 @@
         wxDot.className = "dot " + (wxUp ? "good" : (wxDown ? "bad" : "warn"));
         utils.setText(wxText, `Weather: ${wxUp ? "UP" : (wxDown ? "DOWN" : "…")} · ${wxAge} · last ok ${wxLast}`);
 
-        // HSL
         const hslAge = state.hsl?.fetchedAtMs ? utils.ageLabel(state.hsl.fetchedAtMs) : "—";
         const hslLast = state.hslLastSuccessMs ? utils.fmtTime(new Date(state.hslLastSuccessMs), { hour:"2-digit", minute:"2-digit" }) : "—";
         const hslUp = (state.hslStatus === "ok");
@@ -1184,14 +1238,12 @@
         hslDot.className = "dot " + (hslUp ? "good" : (hslDown ? "bad" : "warn"));
         utils.setText(hslText, `HSL: ${hslUp ? "UP" : (hslDown ? "DOWN" : "…")} · ${hslAge} · last ok ${hslLast}`);
 
-        // Paused indicator
         const isPaused = state.pausedUntilMs > Date.now();
         paused.classList.toggle("on", isPaused);
       },
 
       clock(){
         const { day, date, time } = utils.formatHeadingNow();
-        // Requirement: Date, Day and Time on top as heading; time bold and heading as well.
         const clockEl = utils.el("clockText");
         const html = `<span>${day}, ${date}</span> · <b style="font-size:16px; letter-spacing:.2px;">${time}</b>`;
         utils.setHTML(clockEl, html);
@@ -1201,7 +1253,6 @@
         const sub = utils.el("wxSub");
         const body = utils.el("wxBody");
 
-        // Determine stale (no success in a while) — we use age of fetchedAtMs
         const has = !!state.weather;
         const ageMs = has ? (Date.now() - (state.weather.fetchedAtMs || 0)) : Infinity;
         const stale = has && ageMs > (CONFIG.DATA_REFRESH.WEATHER_MS * 1.5);
@@ -1212,7 +1263,6 @@
 
         utils.setText(sub, statusLine);
 
-        // Build render key
         const key = JSON.stringify({
           has,
           stale,
@@ -1225,7 +1275,6 @@
         if (state.lastRenderKey.weather === key) return;
         state.lastRenderKey.weather = key;
 
-        // Friendly placeholders when no cache exists
         if (!has){
           const errMsg = (state.weatherStatus === "down")
             ? `<div class="badge err">Weather API down · retrying</div>`
@@ -1243,7 +1292,6 @@
           return;
         }
 
-        // Simplified condition + icon
         const cond = theme.weatherCodeToCondition(state.weather.weather_code);
         const icon = theme.conditionIcon(cond, state.weather.is_day);
 
@@ -1300,7 +1348,6 @@
 
         utils.setText(sub, statusLine);
 
-        // Build render key
         const key = JSON.stringify({
           has, stale, st: state.hslStatus,
           perStop: has ? state.hsl.perStop.map(x => [x.label, x.routeShortName, x.mins]) : null
@@ -1325,7 +1372,6 @@
           return;
         }
 
-        // Render 1 row per stop using format string from CONFIG
         const rows = state.hsl.perStop.map((s) => {
           const msg = utils.formatTemplate(s.format, {
             routeShortName: s.routeShortName ?? "?",
@@ -1363,33 +1409,70 @@
           <div class="hsl-list">${rows}</div>
         `);
       }
+      ,
+      hslDetailed(){
+        const sub = utils.el("hslFullSub");
+        if (sub){
+          const has = !!state.hsl && Array.isArray(state.hsl.perStopLists);
+          if (has) {
+            const ageMs = Date.now() - (state.hsl.fetchedAtMs || 0);
+            const stale = ageMs > (CONFIG.DATA_REFRESH.HSL_MS * 2.5);
+            utils.setText(sub, `Updated ${utils.ageLabel(state.hsl.fetchedAtMs)}${stale ? " · stale" : ""}`);
+          } else {
+            utils.setText(sub, "No data yet");
+          }
+        }
+
+        const has = !!state.hsl && Array.isArray(state.hsl.perStopLists);
+
+        if (!has){
+          for (const st of CONFIG.HSL.stops){
+            const el = utils.el(st.target);
+            if (el) utils.setHTML(el, `<span class="small muted">${state.hslStatus === "down" ? "API down — using cache if available" : "Loading…"}</span>`);
+          }
+          return;
+        }
+
+        for (const stop of state.hsl.perStopLists){
+          const targetEl = utils.el(stop.target);
+          if (!targetEl) continue;
+
+          const list = Array.isArray(stop.list) ? stop.list : [];
+          if (!list.length){
+            utils.setHTML(targetEl, `<span class="small muted">No departures found</span>`);
+            continue;
+          }
+
+          const html = list.map((d) => {
+            const depTime = d.departureMs ? utils.fmtTime(new Date(d.departureMs), { hour:"2-digit", minute:"2-digit" }) : "—";
+            const mins = (typeof d.mins === "number") ? d.mins : "—";
+            const rt = d.routeShortName || "?";
+            const live = d.realtime ? "realtime" : "scheduled";
+            const soon = (typeof mins === "number" && mins <= 3);
+
+            return `
+              <div class="timePill" style="${soon ? "border-color: rgba(34,197,94,.45);" : ""}">
+                <div>
+                  <span style="color:var(--accent);">${rt}</span>
+                  <span class="timeMeta"> · ${depTime}</span>
+                </div>
+                <div class="timeMeta"><b style="color:var(--fg);">${mins}</b> min · ${live}</div>
+              </div>
+            `;
+          }).join("");
+
+          utils.setHTML(targetEl, html);
+        }
+      }
     };
 
     /***********************************************************************
-     * THEME (CSS variables + overlays)
-     * - Apply time-of-day immediately on boot
-     * - Refine after weather loads
-     * - Ensure contrast: keep text light on dark backgrounds
+     * THEME
      ***********************************************************************/
     const theme = {
-      // Map Open-Meteo weather codes into simplified conditions
-      // clear, partly_cloudy, cloudy, fog, rain, snow, thunder
       weatherCodeToCondition(code){
         const c = Number(code);
-
-        // Defensive fallback
         if (!Number.isFinite(c)) return "cloudy";
-
-        // Open-Meteo weather code groups (approx)
-        // 0 clear
-        // 1-3 mainly clear/partly cloudy/overcast
-        // 45-48 fog
-        // 51-67 drizzle/rain
-        // 71-77 snow
-        // 80-82 rain showers
-        // 85-86 snow showers
-        // 95 thunderstorm
-        // 96-99 thunderstorm with hail
         if (c === 0) return "clear";
         if (c >= 1 && c <= 2) return "partly_cloudy";
         if (c === 3) return "cloudy";
@@ -1399,8 +1482,6 @@
         if (c >= 95 && c <= 99) return "thunder";
         return "cloudy";
       },
-
-      // Icon for simplified condition + day/night
       conditionIcon(cond, isDay){
         const day = (Number(isDay) === 1);
         switch(cond){
@@ -1414,13 +1495,10 @@
           default: return "☁️";
         }
       },
-
-      // Apply time-of-day base theme
       applyBaseByTime(){
         const now = new Date();
         let hour = 0;
         try{
-          // Convert to configured timezone hour
           const parts = new Intl.DateTimeFormat("en-GB", {
             timeZone: CONFIG.TIMEZONE,
             hour: "2-digit",
@@ -1432,8 +1510,6 @@
           hour = now.getHours();
         }
 
-        // Day segments
-        // Night: 22-5, Morning: 6-10, Day: 11-16, Evening: 17-21
         let bg = "#070A12";
         let accent = "#38BDF8";
         let accent2 = "#A78BFA";
@@ -1460,40 +1536,24 @@
         document.documentElement.style.setProperty("--accent", accent);
         document.documentElement.style.setProperty("--accent2", accent2);
       },
-
-      // Apply condition overlay (lightweight)
       setConditionOverlay(cond){
         const el = utils.el("condOverlay");
         if (!el) return;
-
-        // Clear previous overlay classnames
         el.className = "cond-overlay";
+        if (cond === "clear") return;
 
-        // Only show for non-clear to keep CPU low
-        if (cond === "clear"){
-          // no overlay
-          return;
-        }
-
-        // Pick overlay type
         let cls = "cond-clouds";
         if (cond === "rain" || cond === "thunder") cls = "cond-rain";
         else if (cond === "snow") cls = "cond-snow";
-        else if (cond === "cloudy" || cond === "partly_cloudy" || cond === "fog") cls = "cond-clouds";
+        else cls = "cond-clouds";
 
         el.classList.add("on", cls);
       },
-
-      // Refine theme based on weather (but always keep dark background & light text)
       applyWeatherRefine(){
-        // If weather failed, don't force anything; base time theme is enough.
         if (!state.weather) return;
-
         const cond = theme.weatherCodeToCondition(state.weather.weather_code);
         const isDay = (Number(state.weather.is_day) === 1);
 
-        // Simple palette nudges by condition
-        // (Stay dark for TV contrast)
         let bg = isDay ? "#070B15" : "#05060E";
         let accent = isDay ? "#38BDF8" : "#A78BFA";
         let accent2 = isDay ? "#22C55E" : "#38BDF8";
@@ -1526,8 +1586,6 @@
 
         theme.setConditionOverlay(cond);
       },
-
-      // Public apply: base first, then refine if we have weather
       apply(){
         theme.applyBaseByTime();
         theme.applyWeatherRefine();
@@ -1535,10 +1593,7 @@
     };
 
     /***********************************************************************
-     * ROUTER (page switching + manual nav)
-     * - Smooth fade transitions already in CSS
-     * - Manual nav: left/right keyboard
-     * - Pause rotation for 60s on manual nav, then resume
+     * ROUTER
      ***********************************************************************/
     const router = {
       init(){
@@ -1546,13 +1601,11 @@
         router.buildDots();
         router.show(0, false);
 
-        // One-time keyboard listener (avoid memory leaks)
         window.addEventListener("keydown", (e) => {
           if (e.key === "ArrowRight") router.next(true);
           if (e.key === "ArrowLeft") router.prev(true);
         }, { passive:true });
       },
-
       buildDots(){
         const dots = utils.el("pageDots");
         if (!dots) return;
@@ -1562,7 +1615,6 @@
         ).join("");
         utils.setHTML(dots, html);
 
-        // Single delegated click handler (one listener total)
         dots.addEventListener("click", (e) => {
           const t = e.target;
           if (!(t instanceof Element)) return;
@@ -1572,12 +1624,10 @@
           }
         }, { passive:true });
       },
-
       updateDots(){
         const dots = utils.qsa(".page-dot", utils.el("pageDots"));
         dots.forEach((d, i) => d.classList.toggle("active", i === state.pageIndex));
       },
-
       show(i, manual=false){
         const idx = (i + state.pageCount) % state.pageCount;
         state.pageIndex = idx;
@@ -1588,27 +1638,23 @@
         }
         router.updateDots();
 
-        // Pause rotation on manual navigation for 60 seconds
         if (manual){
           state.pausedUntilMs = Date.now() + 60 * 1000;
           render.statusBar();
         }
       },
-
       next(manual=false){ router.show(state.pageIndex + 1, manual); },
       prev(manual=false){ router.show(state.pageIndex - 1, manual); }
     };
 
     /***********************************************************************
-     * HEALTH (network + API up/down logic)
+     * HEALTH
      ***********************************************************************/
     const health = {
       init(){
-        // Online/offline events (one-time)
         window.addEventListener("online", () => {
           state.online = true;
           render.statusBar();
-          // When back online, try sooner (but still keep backoff logic safe)
           state.weatherNextTryMs = 0;
           state.hslNextTryMs = 0;
         });
@@ -1620,50 +1666,37 @@
     };
 
     /***********************************************************************
-     * SCHEDULER (intervals + refresh)
-     * - One set of intervals only (memory leak avoidance)
-     * - Must keep rotating pages even if all APIs fail
+     * SCHEDULER
      ***********************************************************************/
     const scheduler = {
       start(){
-        scheduler.stop(); // defensive: ensure no duplicates
+        scheduler.stop();
 
-        // Clock tick (every second, tiny)
         state.timers.clock = setInterval(() => {
           render.clock();
-          // theme base can drift with time; update softly every minute via this check
           const s = new Date().getSeconds();
-          if (s === 0) theme.apply(); // once per minute
+          if (s === 0) theme.apply();
         }, 1000);
 
-        // Page rotation
         state.timers.rotation = setInterval(() => {
-          // Always keep rotating; if paused, do nothing until pause expires
           if (Date.now() < state.pausedUntilMs) return;
           router.next(false);
         }, CONFIG.ROTATION_MS);
 
-        // Weather refresh interval
         state.timers.weather = setInterval(() => {
-          // If backoff says wait longer, don't force
           if (state.weatherNextTryMs && Date.now() < state.weatherNextTryMs) return;
           api.fetchWeather();
         }, CONFIG.DATA_REFRESH.WEATHER_MS);
 
-        // HSL refresh interval
         state.timers.hsl = setInterval(() => {
           if (state.hslNextTryMs && Date.now() < state.hslNextTryMs) return;
           api.fetchHsl();
         }, CONFIG.DATA_REFRESH.HSL_MS);
 
-        // Retry tick for backoff (small heartbeat)
         state.timers.retryTick = setInterval(() => {
           const now = Date.now();
-
-          // Auto-resume rotation indicator (purely visual)
           render.statusBar();
 
-          // If API is down and nextTry has arrived, try again
           if (state.online){
             if (state.weatherStatus === "down" && state.weatherNextTryMs && now >= state.weatherNextTryMs){
               state.weatherNextTryMs = 0;
@@ -1678,7 +1711,6 @@
       },
 
       stop(){
-        // Clear all timers if present
         for (const k of Object.keys(state.timers)){
           if (state.timers[k]){
             clearInterval(state.timers[k]);
@@ -1690,21 +1722,15 @@
 
     /***********************************************************************
      * IFRAME SETUP (no constant refreshing!)
-     * - Set src once on boot.
-     * - Optionally disable pointer events to reduce accidental focus/CPU
      ***********************************************************************/
     const iframes = {
       init(){
-        // Apply pointer-events policy
         if (!CONFIG.IFRAME.allowPointerEvents){
-          // Globally disable pointer events on iframes to prevent interactions
-          // (This helps TV kiosk-style dashboards.)
           const style = document.createElement("style");
           style.textContent = `iframe{ pointer-events:none; }`;
           document.head.appendChild(style);
         }
 
-        // Electricity
         const elecHome = utils.el("iframeElecHome");
         const elecLink = utils.el("elecLink");
         if (elecHome) elecHome.src = CONFIG.ELECTRICITY.homeUrl;
@@ -1715,17 +1741,9 @@
         if (elecToday) elecToday.src = CONFIG.ELECTRICITY.embedToday;
         if (elecTomorrow) elecTomorrow.src = CONFIG.ELECTRICITY.embedTomorrow;
 
-        // Calendar
         const cal = utils.el("iframeCal");
         if (cal) cal.src = CONFIG.CALENDAR.embedUrl;
 
-        // HSL detailed pages
-        const s1 = utils.el("iframeStop1");
-        const s2 = utils.el("iframeStop2");
-        const s3 = utils.el("iframeStop3");
-        if (s1) s1.src = "https://reittiopas.hsl.fi/pysakit/HSL%3A2151204";
-        if (s2) s2.src = "https://reittiopas.hsl.fi/pysakit/HSL%3A2151208";
-        if (s3) s3.src = "https://reittiopas.hsl.fi/pysakit/HSL%3A2111552";
       }
     };
 
@@ -1733,29 +1751,21 @@
      * BOOT (cache first, render, then fetch)
      ***********************************************************************/
     (function boot(){
-      // 1) Load cache immediately (critical for 24/7 stability)
       cache.load();
-
-      // 2) Apply time-of-day theme immediately (even if offline)
       theme.apply();
-
-      // 3) Init health + router + iframes (no repeated listeners)
       health.init();
       router.init();
       iframes.init();
 
-      // 4) First render from cache/placeholder
       render.clock();
       render.weather();
       render.hsl();
+      render.hslDetailed();
       render.statusBar();
 
-      // 5) Kick off initial fetches (non-blocking)
-      // Even if these fail, rotation continues and cached UI remains.
       api.fetchWeather();
       api.fetchHsl();
 
-      // 6) Start scheduler (single set of intervals)
       scheduler.start();
     })();
   </script>
