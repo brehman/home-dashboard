@@ -781,6 +781,134 @@
     .routesCols{ grid-template-columns: repeat(2, 1fr); }
     #planningPage .planningGrid{ grid-template-columns: 1fr; }
   }
+  /* =========================
+   WEATHER PAGE (NEW)
+========================= */
+.page.weatherPage{
+  display:none;
+  grid-template-rows: 0.55fr 1fr;
+  gap:12px;
+}
+.page.weatherPage.active{display:grid;}
+
+.weatherHero{
+  position:relative;
+  border-radius: var(--radius);
+  border:1px solid var(--stroke);
+  background:
+    radial-gradient(900px 400px at 50% 30%, rgba(255,255,255,.18), rgba(255,255,255,.02)),
+    linear-gradient(180deg, rgba(30,58,138,.35), rgba(2,6,23,.65));
+  overflow:hidden;
+  padding: 16px 18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:stretch;
+  gap: 16px;
+}
+
+/* subtle “storm cloud” layer */
+.weatherHero::before{
+  content:"";
+  position:absolute; inset:-40px;
+  background: radial-gradient(closest-side, rgba(255,255,255,.08), rgba(255,255,255,0) 70%);
+  filter: blur(10px);
+  opacity:.55;
+  pointer-events:none;
+}
+
+.heroLeft{position:relative; z-index:1; display:flex; flex-direction:column; gap:8px;}
+.locLine{font-size:16px; color:rgba(255,255,255,.9); font-weight:650;}
+.dateLine{font-size:20px; color:rgba(255,255,255,.95); font-weight:650;}
+.heroTempRow{display:flex; align-items:baseline; gap:12px;}
+.heroTemp{font-size:72px; font-weight:850; letter-spacing:-1px;}
+.heroDesc{font-size:18px; color:rgba(255,255,255,.9); max-width: 70ch;}
+
+.heroRight{position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between;}
+#wHeroIcon{width:170px; height:170px; filter: drop-shadow(0 18px 25px rgba(0,0,0,.45));}
+
+.heroBadge{
+  padding:8px 12px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.16);
+  background: rgba(0,0,0,.20);
+  color: rgba(255,255,255,.9);
+  font-weight:700;
+}
+
+.weatherGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr 1.1fr;
+  grid-template-rows: 1fr 1fr;
+  gap:12px;
+  min-height:0;
+}
+
+.wCard{
+  background: rgba(255,255,255,.07);
+  border:1px solid var(--stroke);
+  border-radius: var(--radius);
+  padding:14px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.wCardTitle{font-size:16px; font-weight:800; opacity:.95;}
+.wBig{font-size:46px; font-weight:900;}
+.wSmall{color:var(--muted); font-size:13px;}
+
+.wMiniGraph{
+  height:44px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.20);
+}
+
+.wTimeBox{display:flex; flex-direction:column; gap:6px;}
+.wClock{font-size:44px; font-weight:900;}
+.wTinyRow{display:flex; justify-content:space-between; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.18);}
+.wTinyVal{font-weight:900;}
+
+.wWeek{grid-column: 4 / 5; grid-row: 1 / 3;}
+.wWeekList{display:flex; flex-direction:column; gap:10px; overflow:auto;}
+.wWeekItem{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 12px;
+  border-radius: 14px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+}
+.wWeekLeft{display:flex; align-items:center; gap:10px;}
+.wWeekDay{min-width:72px; font-weight:800;}
+.wWeekIcon{width:28px; height:28px;}
+.wWeekTemp{font-weight:900;}
+
+.wStats{grid-column: 1 / 2; grid-row: 2 / 3; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+.wStat{
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+}
+.wStatK{font-size:12px; color:var(--muted);}
+.wStatV{font-size:18px; font-weight:900;}
+
+.wHourly{grid-column: 2 / 4; grid-row: 2 / 3;}
+.wHourlyRow{display:flex; gap:10px; overflow:auto;}
+.wHour{
+  min-width:110px;
+  padding:10px 10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:center;
+}
+.wHourTime{font-weight:900;}
+.wHourIcon{width:34px;height:34px;}
+.wHourTemp{font-weight:900;font-size:18px;}
 </style>
 </head>
 
@@ -818,6 +946,86 @@
     <!-- =========================
          PAGE 1: TODAY
     ========================== -->
+    <!-- ================= WEATHER (NEW PAGE) ================= -->
+<section id="pageWeather" class="page weatherPage">
+
+  <div class="weatherHero">
+    <div class="heroLeft">
+      <div class="locLine">📍 <span id="wLoc">Espoo • Viherlaakso</span></div>
+      <div class="dateLine" id="wDateLine">—</div>
+
+      <div class="heroTempRow">
+        <span class="heroTemp" id="wHeroTemp">--°C</span>
+      </div>
+
+      <div class="heroDesc" id="wHeroDesc">—</div>
+    </div>
+
+    <div class="heroRight">
+      <img id="wHeroIcon" alt="Weather icon" />
+      <div class="heroBadge">
+        ⏱ <span id="wNextRefresh">30s</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="weatherGrid">
+
+    <div class="wCard">
+      <div class="wCardTitle">❤️ Ulkona</div>
+      <div class="wBig" id="wOutdoor">--°C</div>
+      <div class="wMiniGraph" id="wOutdoorGraph"></div>
+    </div>
+
+    <div class="wCard">
+      <div class="wCardTitle">❤️ Kotona</div>
+      <div class="wBig" id="wIndoor">--°C</div>
+      <div class="wSmall">Set this manually in JS (or connect a sensor later).</div>
+      <div class="wMiniGraph" id="wIndoorGraph"></div>
+    </div>
+
+    <div class="wCard">
+      <div class="wCardTitle">❤️ Aurinko</div>
+      <div class="wTimeBox">
+        <div class="wClock" id="wClock">--:--:--</div>
+        <div class="wSmall">Sunrise: <b id="wSunrise">--:--</b> • Sunset: <b id="wSunset">--:--</b></div>
+      </div>
+      <div class="wTinyRow">
+        <div>UV</div><div class="wTinyVal" id="wUV">—</div>
+      </div>
+    </div>
+
+    <div class="wCard wWeek">
+      <div class="wCardTitle">❤️ Viikon sää</div>
+      <div class="wWeekList" id="wWeekList"></div>
+    </div>
+
+    <div class="wCard wStats">
+      <div class="wStat">
+        <div class="wStatK">AQI</div>
+        <div class="wStatV" id="wAQI">—</div>
+      </div>
+      <div class="wStat">
+        <div class="wStatK">Tuuli</div>
+        <div class="wStatV"><span id="wWind">—</span> m/s</div>
+      </div>
+      <div class="wStat">
+        <div class="wStatK">Paine</div>
+        <div class="wStatV"><span id="wPress">—</span> hPa</div>
+      </div>
+      <div class="wStat">
+        <div class="wStatK">Kosteus</div>
+        <div class="wStatV"><span id="wHum2">—</span>%</div>
+      </div>
+    </div>
+
+    <div class="wCard wHourly">
+      <div class="wCardTitle">❤️ Tunti tunnilta</div>
+      <div class="wHourlyRow" id="wHourlyRow"></div>
+    </div>
+
+  </div>
+</section>
     <section class="page" id="todayPage" aria-label="Today page">
 
       <!-- Weather top full width -->
