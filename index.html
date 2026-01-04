@@ -1,2092 +1,1763 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Home TV Dashboard</title>
-
-<style>
-  /* =========================================================
-     CONFIG-DRIVEN THEME (JS sets CSS variables dynamically)
-  ========================================================= */
-  :root{
-    --bg1:#f1f5f9;   /* light gray */
-    --bg2:#0f172a;   /* navy blue */
-    --card:rgba(255,255,255,.08);
-    --card2:rgba(255,255,255,.06);
-    --stroke:rgba(255,255,255,.14);
-    --text:#f8fafc;
-    --muted:rgba(248,250,252,.72);
-    --accent:#38bdf8;
-    --accent2:#a78bfa;
-    --good:#22c55e;
-    --warn:#facc15;
-    --bad:#ef4444;
-    --shadow: 0 18px 60px rgba(0,0,0,.35);
-    --radius:22px;
-    --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    /* Keep variables for dark-text defaults possible, do not change values here */
-  }
-
-  *{ box-sizing:border-box; }
-  html, body{ height:100%; }
-  body{
-    margin:0;
-    font-family:var(--font);
-    color:var(--text);
-    overflow:hidden; /* TV mode */
-    background:
-      radial-gradient(1200px 700px at 20% 10%, rgba(228, 231, 237, 0.18), transparent 55%),
-      radial-gradient(900px 600px at 80% 20%, rgba(129, 17, 17, 0.65), transparent 55%),
-      linear-gradient(135deg, var(--bg1), var(--bg2));
-    letter-spacing:.2px;
-  }
-
-
-
-  /* Force readable text on light backgrounds */
-  h1, h2, h3, h4, h5, h6,
-  .cardHeader h2,
-  .wxDesc,
-  .wxTemp,
-  .stat .v,
-  .hourBox .c,
-  .dayBox .t,
-  .stopTitle b,
-  .chip,
-  .tag{
-    color: var(--text);
-  }
-
-  .muted,
-  .small,
-  .tiny,
-  .wxFeels,
-  .stat .k,
-  .hourBox .t,
-  .hourBox .p,
-  .dayBox .d,
-  .dayBox .p,
-  .stopTitle span,
-  .chip .m,
-  .cardHeader .meta{
-    color: var(--muted);
-  }
-
-  /* Subtle animated glow blobs */
-  .bg-blobs::before,
-  .bg-blobs::after{
-    content:"";
-    position:fixed;
-    inset:-20%;
-    background:
-      radial-gradient(circle at 20% 30%, rgba(56,189,248,.18), transparent 35%),
-      radial-gradient(circle at 70% 40%, rgba(167,139,250,.16), transparent 38%),
-      radial-gradient(circle at 40% 80%, rgba(34,197,94,.10), transparent 40%);
-    filter: blur(10px);
-    animation: drift 18s ease-in-out infinite alternate;
-    pointer-events:none;
-    z-index:0;
-  }
-  .bg-blobs::after{
-    animation-duration: 24s;
-    opacity:.85;
-    transform: translate3d(0,0,0) scale(1.05);
-  }
-  @keyframes drift{
-    0%   { transform: translate(-2%, -1%) scale(1.02); }
-    50%  { transform: translate(2%, 2%) scale(1.05); }
-    100% { transform: translate(1%, -2%) scale(1.03); }
-  }
-
-  /* Weather particle canvas overlay */
-  #wxCanvas{
-    position:fixed;
-    inset:0;
-    z-index:1;
-    pointer-events:none;
-    opacity:.9;
-  }
-
-  /* =========================================================
-     LAYOUT
-  ========================================================= */
-  .app{
-    position:relative;
-    height:100%;
-    width:100%;
-    z-index:2;
-    display:flex;
-    flex-direction:column;
-  }
-
-.topbar{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px 18px 14px;
-}
-.brand{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  width:100%;
-}
-  .logo{
-    width:42px;height:42px;border-radius:14px;
-    background:
-      radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 50%),
-      linear-gradient(135deg, rgba(56,189,248,.9), rgba(167,139,250,.9));
-    box-shadow: var(--shadow);
-  }
-#clockHeading{
-  font-size:36px;
-  font-weight:1000;
-  letter-spacing:1px;
-  text-align:center;
-}
-  #clockHeading b{
-    font-weight:1000;
-  }
-  .brand h1{
-    margin:0;
-    font-size:18px;
-    line-height:1.1;
-    font-weight:800;
-    letter-spacing:.6px;
-  }
-  .brand .sub{
-    display:block;
-    margin-top:2px;
-    font-size:12px;
-    color:var(--muted);
-    font-weight:600;
-  }
-  .status{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:12px;
-    color:var(--muted);
-    font-weight:600;
-  }
-  .pill{
-    padding:8px 10px;
-    border-radius:999px;
-    border:1px solid var(--stroke);
-    background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-    box-shadow: 0 10px 30px rgba(0,0,0,.22);
-    white-space:nowrap;
-  }
-  .pill b{ color:var(--text); }
-
-  .pages{
-    flex:1;
-    position:relative;
-  }
-
-  .page{
-    position:absolute;
-    inset:0;
-    padding:12px 18px 18px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    opacity:0;
-    visibility:hidden;
-    pointer-events:none;
-  }
-
-  .page.active{
-    opacity:1;
-    visibility:visible;
-    pointer-events:auto;
-    z-index:2;
-  }
-
-  .grid{
-    display:grid;
-    gap:14px;
-  }
-  .card{
-    border-radius: var(--radius);
-    border: 1px solid var(--stroke);
-    background: linear-gradient(180deg, var(--card), var(--card2));
-    box-shadow: var(--shadow);
-    overflow:hidden;
-  }
-  .cardHeader{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:14px 16px 10px;
-    border-bottom:1px solid rgba(255,255,255,.10);
-  }
-  .cardHeader h2{
-    margin:0;
-    font-size:16px;
-    font-weight:850;
-    letter-spacing:.4px;
-  }
-  .cardHeader .meta{
-    display:flex;
-    gap:10px;
-    color:var(--muted);
-    font-size:12px;
-    font-weight:700;
-    align-items:center;
-  }
-  .cardBody{ padding:14px 16px 16px; }
-
-  .muted{ color:var(--muted); }
-  .small{ font-size:12px; }
-  .tiny{ font-size:11px; }
-  .err{
-    color: #ffd1d1;
-    background: rgba(239,68,68,.16);
-    border: 1px solid rgba(239,68,68,.35);
-    padding:10px 12px;
-    border-radius:14px;
-    font-weight:700;
-  }
-  .loading{
-    color: var(--muted);
-    font-weight:800;
-    letter-spacing:.3px;
-  }
-
-  /* =========================================================
-     TODAY PAGE LAYOUT
-     - Weather box: top full width
-     - Departures box: middle
-     - Route suggestions: bottom 4 vertical columns
-  ========================================================= */
-  #todayPage{
-    display:flex;
-    flex-direction:column;
-  }
-
-  #weatherCard{ flex: 0 0 auto; }
-  #departuresCard{ flex: 1 1 auto; min-height: 0; }
-  #routesCard{ flex: 0 0 auto; }
-
-  /* Weather header visuals */
-  .wxHero{
-    position:relative;
-    border-radius: 18px;
-    padding:14px 14px 12px;
-    border:1px solid rgba(255,255,255,.12);
-    overflow:hidden;
-    background:
-      radial-gradient(800px 240px at 20% 0%, rgba(56,189,248,.24), transparent 60%),
-      radial-gradient(600px 220px at 75% 30%, rgba(167,139,250,.18), transparent 55%),
-      linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-  }
-  .wxHero::after{
-    content:"";
-    position:absolute;
-    inset:-1px;
-    background:
-      radial-gradient(circle at 12% 30%, rgba(255,255,255,.16), transparent 42%),
-      radial-gradient(circle at 70% 20%, rgba(255,255,255,.10), transparent 45%);
-    opacity:.9;
-    pointer-events:none;
-  }
-
-  /* =========================================================
-     WEATHER THEME VARIANTS (by temperature / feels-like)
-  ========================================================= */
-  .wx-theme-freezing{
-    --wx-bg: linear-gradient(135deg, rgba(15,23,42,.65), rgba(2,6,23,.85));
-    --wx-accent: #60a5fa;
-  }
-
-  .wx-theme-cold{
-    --wx-bg: linear-gradient(135deg, rgba(30,58,138,.35), rgba(15,23,42,.55));
-    --wx-accent: #93c5fd;
-  }
-
-  .wx-theme-normal{
-    --wx-bg: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-    --wx-accent: rgba(255,255,255,.35);
-  }
-
-  .wx-theme-warm{
-    --wx-bg: linear-gradient(135deg, rgba(253,224,71,.22), rgba(250,204,21,.10));
-    --wx-accent: #fde047;
-  }
-
-  .wx-theme-hot{
-    --wx-bg: linear-gradient(135deg, rgba(234,179,8,.35), rgba(161,98,7,.45));
-    --wx-accent: #f59e0b;
-  }
-
-  /* Apply theme variables */
-  .wxHero,
-  .hourBox,
-  .dayBox{
-    background: var(--wx-bg, rgba(0,0,0,.10));
-    border-color: color-mix(in srgb, var(--wx-accent, rgba(255,255,255,.18)) 40%, transparent);
-  }
-  .wxTopRow{
-    position:relative;
-    display:grid;
-    grid-template-columns: 1.25fr 1fr;
-    gap:14px;
-    z-index:1;
-  }
-  .wxNow{
-    display:flex;
-    gap:14px;
-    align-items:center;
-  }
-  .wxIcon{
-    width:76px; height:76px;
-    border-radius: 24px;
-    border:1px solid rgba(255,255,255,.14);
-    background:
-      radial-gradient(circle at 30% 30%, rgba(255,255,255,.26), transparent 55%),
-      linear-gradient(135deg, rgba(56,189,248,.65), rgba(167,139,250,.55));
-    box-shadow: 0 14px 40px rgba(0,0,0,.28);
-    display:grid;
-    place-items:center;
-    font-size:38px;
-  }
-  .wxNowMain{
-    display:flex;
-    flex-direction:column;
-    gap:3px;
-  }
-  .wxTemp{
-    font-size:44px;
-    font-weight:950;
-    letter-spacing:-1px;
-    line-height:1;
-  }
-  .wxLine{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:baseline;
-  }
-  .wxDesc{
-    font-size:14px;
-    font-weight:850;
-    color:var(--text);
-  }
-  .wxFeels{
-    font-size:12px;
-    font-weight:750;
-    color:var(--muted);
-  }
-  .wxStats{
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:10px;
-    align-content:start;
-  }
-  .stat{
-    border-radius:16px;
-    border:1px solid rgba(255,255,255,.12);
-    background: rgba(0,0,0,.10);
-    padding:10px 12px;
-    display:flex;
-    flex-direction:column;
-  }
-
-  .stat .k{
-    font-size:11px;
-    color:var(--muted);
-    font-weight:800;
-    letter-spacing:.3px;
-  }
-
-  .stat .v{
-    margin-top:4px;
-    font-size:20px;      /* bigger value */
-    font-weight:950;
-    text-align:right;    /* push value towards right */
-  }
-
-  /* Next hours */
-.hoursStrip{
-  margin-top:12px;
-  display:grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap:10px;
-}
-  .hourBox{
-    border-radius:16px;
-    border:1px solid rgba(255,255,255,.12);
-    background: rgba(0,0,0,.10);
-    padding:10px 12px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-
-  .hourBox .i{
-    font-size:28px;
-    flex:0 0 auto;
-  }
-
-  .hourBox .hourMeta{
-    display:grid;
-    grid-template-columns: auto 1fr;
-    column-gap:8px;
-    row-gap:2px;
-    width:100%;
-  }
-
-  .hourBox .t{ font-size:11px; color:var(--muted); font-weight:900; }
-  .hourBox .c{
-    font-size:26px;          /* bigger temperature */
-    font-weight:1000;
-    margin-left:auto;       /* push temperature to the right */
-    text-align:right;
-  }
-  .hourBox .p{ font-size:11px; color:var(--muted); font-weight:800; }
-
-  /* Daily forecast boxes (10 days) */
-.daysStrip{
-  margin-top:14px;
-  display:grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap:10px;
-}
-
-.dayBox{
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.10);
-  padding:10px 8px;
-  text-align:center;
-}
-
-.dayBox .d{
-  font-size:11px;
-  font-weight:900;
-  color:var(--muted);
-}
-
-  .dayBox{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-
-  .dayBox .i{
-    font-size:26px;
-    flex:0 0 auto;
-  }
-
-  .dayBox .t{
-    margin-top:4px;
-    font-size:22px;
-    font-weight:1000;
-    text-align:right;
-  }
-
-.dayBox .p{
-  margin-top:3px;
-  font-size:11px;
-  color:var(--muted);
-  font-weight:800;
-}
-
-  /* 10-day table */
-  .table{
-    width:100%;
-    border-collapse:separate;
-    border-spacing:0 8px;
-  }
-  .table th{
-    text-align:left;
-    font-size:11px;
-    letter-spacing:.35px;
-    color:var(--muted);
-    font-weight:900;
-    padding:0 8px 6px;
-  }
-  .table td{
-    padding:10px 8px;
-    background: rgba(0,0,0,.10);
-    border-top:1px solid rgba(255,255,255,.10);
-    border-bottom:1px solid rgba(255,255,255,.10);
-    font-weight:800;
-    font-size:13px;
-  }
-  .table tr td:first-child{
-    border-left:1px solid rgba(255,255,255,.10);
-    border-top-left-radius:16px;
-    border-bottom-left-radius:16px;
-  }
-  .table tr td:last-child{
-    border-right:1px solid rgba(255,255,255,.10);
-    border-top-right-radius:16px;
-    border-bottom-right-radius:16px;
-  }
-
-  
-
-  /* HSL Departures */
-.summary{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:10px;
-}
-
-.summary .bus{
-  font-size:30px;
-  font-weight:1000;
-  letter-spacing:-1px;
-}
-
-.summary .mins{
-  font-size:30px;
-  font-weight:1000;
-  letter-spacing:-1px;
-  white-space:nowrap;
-}
-  .stopRow{
-    border-radius:18px;
-    border:1px solid rgba(255,255,255,.12);
-    background: rgba(0,0,0,.10);
-    padding:12px 12px;
-  }
-  .stopTitle{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:10px;
-  }
-  .stopTitle b{ font-size:19px; font-weight:950; }
-  .stopTitle span{ font-size:11px; color:var(--muted); font-weight:850; }
-
-  .times{
-    margin-top:10px;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-  .chip{
-    border-radius:999px;
-    border:1px solid rgba(255,255,255,.14);
-    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-    padding:8px 10px;
-    display:flex;
-    gap:8px;
-    align-items:center;
-    font-weight:900;
-    font-size:17px;
-    flex-wrap:wrap;
-  }
-  .chip .r{
-    color: rgba(255,255,255,.92);
-    padding:2px 8px;
-    border-radius:999px;
-    background: rgba(56,189,248,.22);
-    border: 1px solid rgba(56,189,248,.35);
-    font-weight:950;
-  }
-  .chip .m{
-    color:var(--muted);
-    font-weight:900;
-  }
-
-.chip .to{
-  flex: 1 1 auto;
-  min-width: 120px;
-  color: var(--muted);
-  font-weight: 850;
-  font-size: 11px;
-  line-height: 1.15;
-}
-
-.chip .time{
-  font-weight: 950;
-}
-
-  /* Route suggestions: 4 columns */
-  .routesCols{
-    display:grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap:12px;
-  }
-  .routesCols3{
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .routesCols4{
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .stackCol{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    min-height:0;
-  }
-
-  .pill.ok b{
-  color: var(--good); /* green */
-}
-
-.pill.err b{
-  color: var(--bad); /* red */
-}
-
-  /* =========================================================
-     PLANNING PAGE LAYOUT
-     - 30% Calendar (left)
-     - 70% Spot price chart (right)
-  ========================================================= */
-  .calendarZoom{
-  position:relative;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-}
-
-/* TV readability zoom */
-
-
-/* Power embeds (Today + Tomorrow) */
-
-.powerEmbedHeader{
-  position:absolute;
-  top:10px;
-  left:12px;
-  right:12px;
-  text-align:center;
-  font-size:14px;
-  font-weight:900;
-  letter-spacing:.4px;
-  color:var(--text);
-  padding:6px 10px;
-  border-radius:999px;
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,.16),
-    rgba(255,255,255,.06)
-  );
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow: 0 8px 24px rgba(0,0,0,.25);
-  z-index:2;
-  pointer-events:none;
-}
-
-.powerEmbeds{
-  display:flex;
-  flex-direction:row;
-  gap:12px;
-  height:100%;
-}
-
-.powerEmbed{
-  position:relative;
-  flex:1 1 0;
-  height:550px;
-  overflow:hidden;
-  border-radius: calc(var(--radius) - 8px);
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.10);
-}
-
-/* Zoom out a bit so more of the embedded content is visible */
-.powerEmbed iframe{
-  position:absolute;
-  top:44px;
-  left:0;
-  width:100%;
-  height:calc(100% - 44px);
-  border:0;
-}
-
-.calendarZoom iframe{
-  transform: scale(1.25);
-  transform-origin: top left;
-  width:80%;
-  height:75%;
-}
-#planningPage .planningGrid{
-  display:grid;
-  grid-template-columns: 0.25fr 0.75fr; /* Calendar 35%, Power 65% */
-  gap:14px;
-  height:100%;
-  min-height:0;
-}
-  .planningGrid .card{ min-height:0; display:flex; flex-direction:column; }
-  .iframeWrap{
-    flex:1;
-    min-height:0;
-    padding:0;
-  }
-  iframe{
-    width:100%;
-    height:100%;
-    border:0;
-    display:block;
-    border-bottom-left-radius: var(--radius);
-    border-bottom-right-radius: var(--radius);
-  }
-
-  /* Chart */
-  .chartWrap{
-    position:relative;
-    flex:1;
-    min-height:0;
-    padding:0;
-  }
-  #priceCanvas{
-    width:100%;
-    height:100%;
-    display:block;
-  }
-  .chartOverlay{
-    position:absolute;
-    inset:auto 14px 14px 14px;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
-    pointer-events:none;
-  }
-  .tag{
-    pointer-events:none;
-    border-radius:999px;
-    padding:8px 10px;
-    border:1px solid rgba(255,255,255,.14);
-    background: rgba(0,0,0,.18);
-    color: rgba(255,255,255,.92);
-    font-size:12px;
-    font-weight:900;
-  }
-
-  /* =========================================================
-     TRANSITIONS (page fade)
-  ========================================================= */
-  .pageFadeIn{ animation: fadeIn .55s ease-out; }
-  @keyframes fadeIn{
-    from{ opacity:0; transform: translateY(8px); }
-    to{ opacity:1; transform: translateY(0); }
-  }
-
-  /* TV safety: big touch targets and readable spacing */
-  @media (max-width: 1200px){
-    .hoursStrip{ grid-template-columns: repeat(6, 1fr); }
-    .routesCols{ grid-template-columns: repeat(2, 1fr); }
-    #planningPage .planningGrid{ grid-template-columns: 1fr; }
-  }
-  /* =========================
-   WEATHER PAGE (NEW)
-========================= */
-.page.weatherPage{
-  display:none;
-  grid-template-rows: 0.55fr 1fr;
-  gap:12px;
-}
-.page.weatherPage.active{display:grid;}
-
-.weatherHero{
-  position:relative;
-  border-radius: var(--radius);
-  border:1px solid var(--stroke);
-  background:
-    radial-gradient(900px 400px at 50% 30%, rgba(255,255,255,.18), rgba(255,255,255,.02)),
-    linear-gradient(180deg, rgba(30,58,138,.35), rgba(2,6,23,.65));
-  overflow:hidden;
-  padding: 16px 18px;
-  display:flex;
-  justify-content:space-between;
-  align-items:stretch;
-  gap: 16px;
-}
-
-/* subtle “storm cloud” layer */
-.weatherHero::before{
-  content:"";
-  position:absolute; inset:-40px;
-  background: radial-gradient(closest-side, rgba(255,255,255,.08), rgba(255,255,255,0) 70%);
-  filter: blur(10px);
-  opacity:.55;
-  pointer-events:none;
-}
-
-.heroLeft{position:relative; z-index:1; display:flex; flex-direction:column; gap:8px;}
-.locLine{font-size:16px; color:rgba(255,255,255,.9); font-weight:650;}
-.dateLine{font-size:20px; color:rgba(255,255,255,.95); font-weight:650;}
-.heroTempRow{display:flex; align-items:baseline; gap:12px;}
-.heroTemp{font-size:72px; font-weight:850; letter-spacing:-1px;}
-.heroDesc{font-size:18px; color:rgba(255,255,255,.9); max-width: 70ch;}
-
-.heroRight{position:relative; z-index:1; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between;}
-#wHeroIcon{width:170px; height:170px; filter: drop-shadow(0 18px 25px rgba(0,0,0,.45));}
-
-.heroBadge{
-  padding:8px 12px;
-  border-radius: 999px;
-  border:1px solid rgba(255,255,255,.16);
-  background: rgba(0,0,0,.20);
-  color: rgba(255,255,255,.9);
-  font-weight:700;
-}
-
-.weatherGrid{
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr 1.1fr;
-  grid-template-rows: 1fr 1fr;
-  gap:12px;
-  min-height:0;
-}
-
-.wCard{
-  background: rgba(255,255,255,.07);
-  border:1px solid var(--stroke);
-  border-radius: var(--radius);
-  padding:14px;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.wCardTitle{font-size:16px; font-weight:800; opacity:.95;}
-.wBig{font-size:46px; font-weight:900;}
-.wSmall{color:var(--muted); font-size:13px;}
-
-.wMiniGraph{
-  height:44px;
-  border-radius: 12px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.20);
-}
-
-.wTimeBox{display:flex; flex-direction:column; gap:6px;}
-.wClock{font-size:44px; font-weight:900;}
-.wTinyRow{display:flex; justify-content:space-between; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.18);}
-.wTinyVal{font-weight:900;}
-
-.wWeek{grid-column: 4 / 5; grid-row: 1 / 3;}
-.wWeekList{display:flex; flex-direction:column; gap:10px; overflow:auto;}
-.wWeekItem{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:10px 12px;
-  border-radius: 14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
-}
-.wWeekLeft{display:flex; align-items:center; gap:10px;}
-.wWeekDay{min-width:72px; font-weight:800;}
-.wWeekIcon{width:28px; height:28px;}
-.wWeekTemp{font-weight:900;}
-
-.wStats{grid-column: 1 / 2; grid-row: 2 / 3; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
-.wStat{
-  padding:10px 12px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
-}
-.wStatK{font-size:12px; color:var(--muted);}
-.wStatV{font-size:18px; font-weight:900;}
-
-.wHourly{grid-column: 2 / 4; grid-row: 2 / 3;}
-.wHourlyRow{display:flex; gap:10px; overflow:auto;}
-.wHour{
-  min-width:110px;
-  padding:10px 10px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.18);
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  align-items:center;
-}
-.wHourTime{font-weight:900;}
-.wHourIcon{width:34px;height:34px;}
-.wHourTemp{font-weight:900;font-size:18px;}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Home TV Dashboard</title>
+
+  <style>
+    /***********************************************************************
+     * HOME TV DASHBOARD — Single-file, 24/7 stable
+     * - Dark, energetic, readable from distance
+     * - No external JS libs
+     * - Low-cost CSS animations only
+     ***********************************************************************/
+
+    :root{
+      /* Theme variables (modified by JS theme engine) */
+      --bg: #070A12;
+      --fg: #F8FAFC;
+      --muted: rgba(248,250,252,.72);
+      --card: rgba(15, 23, 42, 0.86);
+      --card2: rgba(2, 6, 23, 0.45);
+      --stroke: rgba(148,163,184,.22);
+      --accent: #38BDF8;
+      --accent2: #A78BFA;
+
+      --good: #22C55E;
+      --warn: #FACC15;
+      --bad:  #EF4444;
+
+      --radius: 22px;
+      --shadow: 0 14px 40px rgba(0,0,0,.45);
+
+      --statusH: 38px;
+      --pad: 18px;
+
+      --fadeMs: 380ms;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--fg);
+      background: radial-gradient(1200px 800px at 10% 0%, rgba(56,189,248,.18), transparent 60%),
+                  radial-gradient(900px 700px at 90% 10%, rgba(167,139,250,.14), transparent 55%),
+                  linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.25)),
+                  var(--bg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+      overflow:hidden;
+    }
+
+    /* Subtle moving overlay (very light CPU) */
+    .bg-overlay{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.35;
+      mix-blend-mode:screen;
+      background:
+        radial-gradient(900px 600px at 20% 20%, rgba(56,189,248,.20), transparent 60%),
+        radial-gradient(800px 650px at 70% 60%, rgba(167,139,250,.16), transparent 65%),
+        radial-gradient(650px 520px at 40% 90%, rgba(34,197,94,.09), transparent 60%);
+      animation: drift 26s linear infinite;
+    }
+    @keyframes drift{
+      0%{ transform: translate3d(0,0,0); filter:saturate(1.05); }
+      50%{ transform: translate3d(-18px,10px,0); filter:saturate(1.12); }
+      100%{ transform: translate3d(0,0,0); filter:saturate(1.05); }
+    }
+
+    /* Optional condition overlay (rain/snow/cloud) */
+    .cond-overlay{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity 600ms ease;
+    }
+    .cond-overlay.on{ opacity:.26; }
+
+    /* Simple cloud layer */
+    .cond-clouds{
+      background:
+        radial-gradient(50px 28px at 18% 22%, rgba(255,255,255,.22), transparent 65%),
+        radial-gradient(58px 34px at 28% 28%, rgba(255,255,255,.18), transparent 68%),
+        radial-gradient(70px 38px at 42% 22%, rgba(255,255,255,.16), transparent 70%),
+        radial-gradient(70px 40px at 70% 26%, rgba(255,255,255,.14), transparent 70%),
+        radial-gradient(58px 34px at 82% 30%, rgba(255,255,255,.12), transparent 68%);
+      filter: blur(1px);
+      animation: clouds 18s ease-in-out infinite;
+    }
+    @keyframes clouds{
+      0%{ transform: translateX(0); }
+      50%{ transform: translateX(-18px); }
+      100%{ transform: translateX(0); }
+    }
+
+    /* Simple rain streaks */
+    .cond-rain{
+      background:
+        repeating-linear-gradient(115deg,
+          rgba(255,255,255,.0) 0px,
+          rgba(255,255,255,.0) 16px,
+          rgba(255,255,255,.10) 17px,
+          rgba(255,255,255,.0) 19px);
+      animation: rain 900ms linear infinite;
+    }
+    @keyframes rain{
+      from{ transform: translateY(-18px); }
+      to{ transform: translateY(18px); }
+    }
+
+    /* Simple snow sparkle */
+    .cond-snow{
+      background:
+        radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,.28), transparent 60%),
+        radial-gradient(2px 2px at 28% 36%, rgba(255,255,255,.22), transparent 60%),
+        radial-gradient(2px 2px at 48% 18%, rgba(255,255,255,.20), transparent 60%),
+        radial-gradient(2px 2px at 65% 42%, rgba(255,255,255,.24), transparent 60%),
+        radial-gradient(2px 2px at 82% 20%, rgba(255,255,255,.20), transparent 60%),
+        radial-gradient(2px 2px at 92% 55%, rgba(255,255,255,.18), transparent 60%);
+      animation: snow 3.2s ease-in-out infinite;
+    }
+    @keyframes snow{
+      0%{ transform: translateY(-8px); opacity:.20; }
+      50%{ transform: translateY(8px); opacity:.28; }
+      100%{ transform: translateY(-8px); opacity:.20; }
+    }
+
+    /* Top status bar */
+    header.status{
+      position:fixed;
+      top:0; left:0; right:0;
+      height:var(--statusH);
+      padding:0 var(--pad);
+      display:flex;
+      align-items:center;
+      gap:14px;
+      background: linear-gradient(180deg, rgba(2,6,23,.95), rgba(2,6,23,.55));
+      border-bottom: 1px solid rgba(148,163,184,.16);
+      backdrop-filter: blur(6px);
+      z-index:50;
+      font-size:14px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(15,23,42,.55);
+      border:1px solid rgba(148,163,184,.18);
+      color:var(--fg);
+      white-space:nowrap;
+    }
+
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(148,163,184,.55);
+      box-shadow: 0 0 0 2px rgba(0,0,0,.18) inset;
+      flex:0 0 auto;
+    }
+    .dot.good{ background: var(--good); }
+    .dot.warn{ background: var(--warn); }
+    .dot.bad{  background: var(--bad); }
+
+    .status-right{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .paused{
+      display:none;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(250,204,21,.35);
+      background: rgba(250,204,21,.10);
+      color: rgba(250,204,21,.95);
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .paused.on{ display:inline-flex; align-items:center; gap:8px; }
+
+    /* Main viewport under status bar */
+    main{
+      position:fixed;
+      top:var(--statusH);
+      left:0; right:0; bottom:0;
+      padding: var(--pad);
+    }
+
+    /* Pages container and transition */
+    .pages{
+      height:100%;
+      position:relative;
+    }
+    .page{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      pointer-events:none;
+      transform: translate3d(0,10px,0);
+      transition: opacity var(--fadeMs) ease, transform var(--fadeMs) ease;
+    }
+    .page.active{
+      opacity:1;
+      pointer-events:auto;
+      transform: translate3d(0,0,0);
+    }
+
+    /* Bottom page dots (small, not clutter) */
+    .page-dots{
+      position:fixed;
+      bottom:12px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      gap:10px;
+      z-index:60;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(2,6,23,.45);
+      border:1px solid rgba(148,163,184,.18);
+      backdrop-filter: blur(6px);
+    }
+    .page-dot{
+      width:10px; height:10px; border-radius:999px;
+      border:1px solid rgba(248,250,252,.30);
+      background: rgba(248,250,252,.18);
+      transition: transform 200ms ease, background 200ms ease;
+    }
+    .page-dot.active{
+      background: var(--accent);
+      transform: scale(1.18);
+      border-color: rgba(56,189,248,.75);
+    }
+
+    /* Cards and layouts */
+    .grid-2x2{
+      height:100%;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: var(--pad);
+    }
+
+    .card{
+      position:relative;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--card), rgba(2,6,23,.58));
+      border: 1px solid rgba(148,163,184,.18);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hdr{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      padding: 14px 16px 8px 16px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      background: linear-gradient(180deg, rgba(15,23,42,.55), rgba(15,23,42,0));
+    }
+    .card .hdr h2{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .card .hdr .sub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-left:12px;
+      white-space:nowrap;
+    }
+    .card .body{
+      padding: 14px 16px 16px 16px;
+      height: calc(100% - 54px);
+    }
+
+    /* Large readable typography */
+    .big{
+      font-size: 64px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+    .mid{
+      font-size: 22px;
+      font-weight: 700;
+    reminders: 2
+    }
+    .muted{ color: var(--muted); }
+
+    /* Weather visuals (simple, lightweight) */
+    .weather-wrap{
+      height:100%;
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 10px;
+      align-items:center;
+    }
+    .wx-left{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .wx-temp{
+      display:flex;
+      align-items:baseline;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .wx-feels{
+      font-size: 18px;
+      font-weight:700;
+      color: var(--muted);
+    }
+    .wx-cond{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .wx-badges{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:4px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size: 12px;
+      font-weight: 800;
+      border:1px solid rgba(148,163,184,.20);
+      background: rgba(2,6,23,.30);
+      color: var(--fg);
+    }
+    .badge.stale{
+      border-color: rgba(250,204,21,.35);
+      background: rgba(250,204,21,.10);
+      color: rgba(250,204,21,.95);
+    }
+    .badge.err{
+      border-color: rgba(239,68,68,.35);
+      background: rgba(239,68,68,.10);
+      color: rgba(239,68,68,.95);
+    }
+
+    /* A simple icon "blob" with subtle glow */
+    .wx-icon{
+      width: 100%;
+      height: 100%;
+      min-height: 180px;
+      display:grid;
+      place-items:center;
+      position:relative;
+      border-radius: 18px;
+      background: radial-gradient(160px 120px at 50% 40%, rgba(56,189,248,.22), rgba(0,0,0,0) 70%),
+                  linear-gradient(180deg, rgba(2,6,23,.25), rgba(2,6,23,.55));
+      border: 1px solid rgba(148,163,184,.14);
+      overflow:hidden;
+    }
+    .wx-icon .glyph{
+      font-size: 84px;
+      filter: drop-shadow(0 12px 22px rgba(0,0,0,.35));
+      transform: translateY(-2px);
+      animation: glyphFloat 4.8s ease-in-out infinite;
+    }
+    @keyframes glyphFloat{
+      0%{ transform: translateY(-2px); }
+      50%{ transform: translateY(6px); }
+      100%{ transform: translateY(-2px); }
+    }
+
+    /* HSL list */
+    .hsl-list{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .hsl-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 12px 12px;
+      border-radius: 16px;
+      border:1px solid rgba(148,163,184,.14);
+      background: rgba(2,6,23,.18);
+    }
+    .hsl-left{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      min-width: 50%;
+    }
+    .hsl-stop{
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .hsl-msg{
+      font-size:15px;
+      font-weight:800;
+      color: rgba(248,250,252,.88);
+    }
+    .hsl-right{
+      text-align:right;
+      min-width: 140px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight:700;
+    }
+
+    /* Iframes */
+    .iframe-wrap{
+      height:100%;
+      width:100%;
+      border-radius: 18px;
+      overflow:hidden;
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(2,6,23,.18);
+    }
+    iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+    }
+
+    /* Page 2 planning layout */
+    .two-cols{
+      height:100%;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--pad);
+    }
+
+    /* Page 3 placeholder layout */
+    .schedule-layout{
+      height:100%;
+      display:grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: var(--pad);
+    }
+    .slots{
+      display:grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 12px;
+      height:100%;
+    }
+    .slot{
+      border-radius: 18px;
+      border: 1px dashed rgba(148,163,184,.22);
+      background: rgba(2,6,23,.18);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 14px 16px;
+    }
+    .slot .t{
+      font-weight:900;
+      font-size:16px;
+    }
+    .slot .e{
+      font-weight:700;
+      font-size:14px;
+      color: var(--muted);
+    }
+
+    /* Page 4 iframe columns */
+    .three-cols{
+      height:100%;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--pad);
+    }
+
+    /* Friendly loading/error blocks */
+    .center-msg{
+      height:100%;
+      display:grid;
+      place-items:center;
+      color: var(--muted);
+      text-align:center;
+      padding: 14px;
+    }
+    .center-msg b{ color: var(--fg); }
+
+    /* Make big content fit TVs */
+    @media (max-width: 1100px){
+      .big{ font-size: 56px; }
+      .wx-icon .glyph{ font-size: 76px; }
+    }
+  </style>
 </head>
 
-<body class="bg-blobs">
-<canvas id="wxCanvas"></canvas>
+<body>
+  <!-- Low-cost visual overlays -->
+  <div class="bg-overlay" aria-hidden="true"></div>
+  <div id="condOverlay" class="cond-overlay" aria-hidden="true"></div>
 
-<div class="app">
-  <div class="topbar">
-<div class="brand">
-  <h1 id="clockHeading">Loading…</h1>
-</div>
-
-<div class="status">
-  <div class="pill" id="pagePill"><b>Today</b> · auto-rotate</div>
-
-  <div class="pill" id="netPill">
-    Network: <b id="netState">…</b>
-  </div>
-
-  <div class="pill" id="wxPill">
-    Weather: <b id="wxState">Loading…</b>
-  </div>
-
-  <div class="pill" id="hslPill">
-    Transit: <b id="hslState">Loading…</b>
-  </div>
-
-  <div class="pill" id="powerPill">
-    Power: <b id="powerState">OK</b>
-  </div>
-</div>
-  </div>
-
-  <div class="pages">
-    <!-- =========================
-         PAGE 1: TODAY
-    ========================== -->
-    <!-- ================= WEATHER (NEW PAGE) ================= -->
-<section id="pageWeather" class="page weatherPage">
-
-  <div class="weatherHero">
-    <div class="heroLeft">
-      <div class="locLine">📍 <span id="wLoc">Espoo • Viherlaakso</span></div>
-      <div class="dateLine" id="wDateLine">—</div>
-
-      <div class="heroTempRow">
-        <span class="heroTemp" id="wHeroTemp">--°C</span>
-      </div>
-
-      <div class="heroDesc" id="wHeroDesc">—</div>
+  <!-- Top status bar -->
+  <header class="status" role="banner">
+    <div class="pill" id="pillClock">
+      <span class="dot good" aria-hidden="true"></span>
+      <span id="clockText"><b>Loading time…</b></span>
     </div>
 
-    <div class="heroRight">
-      <img id="wHeroIcon" alt="Weather icon" />
-      <div class="heroBadge">
-        ⏱ <span id="wNextRefresh">30s</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="weatherGrid">
-
-    <div class="wCard">
-      <div class="wCardTitle">❤️ Ulkona</div>
-      <div class="wBig" id="wOutdoor">--°C</div>
-      <div class="wMiniGraph" id="wOutdoorGraph"></div>
+    <div class="pill" id="pillNet">
+      <span class="dot" id="netDot" aria-hidden="true"></span>
+      <span id="netText">Network: …</span>
     </div>
 
-    <div class="wCard">
-      <div class="wCardTitle">❤️ Kotona</div>
-      <div class="wBig" id="wIndoor">--°C</div>
-      <div class="wSmall">Set this manually in JS (or connect a sensor later).</div>
-      <div class="wMiniGraph" id="wIndoorGraph"></div>
+    <div class="pill" id="pillWx">
+      <span class="dot" id="wxDot" aria-hidden="true"></span>
+      <span id="wxText">Weather: …</span>
     </div>
 
-    <div class="wCard">
-      <div class="wCardTitle">❤️ Aurinko</div>
-      <div class="wTimeBox">
-        <div class="wClock" id="wClock">--:--:--</div>
-        <div class="wSmall">Sunrise: <b id="wSunrise">--:--</b> • Sunset: <b id="wSunset">--:--</b></div>
-      </div>
-      <div class="wTinyRow">
-        <div>UV</div><div class="wTinyVal" id="wUV">—</div>
-      </div>
+    <div class="pill" id="pillHsl">
+      <span class="dot" id="hslDot" aria-hidden="true"></span>
+      <span id="hslText">HSL: …</span>
     </div>
 
-    <div class="wCard wWeek">
-      <div class="wCardTitle">❤️ Viikon sää</div>
-      <div class="wWeekList" id="wWeekList"></div>
+    <div class="pill">
+      <span class="dot good" aria-hidden="true"></span>
+      <span>Electricity: <b>EMBED</b></span>
     </div>
 
-    <div class="wCard wStats">
-      <div class="wStat">
-        <div class="wStatK">AQI</div>
-        <div class="wStatV" id="wAQI">—</div>
-      </div>
-      <div class="wStat">
-        <div class="wStatK">Tuuli</div>
-        <div class="wStatV"><span id="wWind">—</span> m/s</div>
-      </div>
-      <div class="wStat">
-        <div class="wStatK">Paine</div>
-        <div class="wStatV"><span id="wPress">—</span> hPa</div>
-      </div>
-      <div class="wStat">
-        <div class="wStatK">Kosteus</div>
-        <div class="wStatV"><span id="wHum2">—</span>%</div>
-      </div>
+    <div class="pill">
+      <span class="dot good" aria-hidden="true"></span>
+      <span>Calendar: <b>EMBED</b></span>
     </div>
 
-    <div class="wCard wHourly">
-      <div class="wCardTitle">❤️ Tunti tunnilta</div>
-      <div class="wHourlyRow" id="wHourlyRow"></div>
+    <div class="status-right">
+      <div class="paused" id="pausedIndicator">⏸ Paused</div>
     </div>
+  </header>
 
-  </div>
-</section>
-    <section class="page" id="todayPage" aria-label="Today page">
+  <main>
+    <div class="pages" id="pages">
 
-      <!-- Weather top full width -->
-      <div class="card" id="weatherCard">
-        <div class="cardHeader">
-          <h2>Weather · Viherlaakso, Espoo</h2>
-          <div class="meta">
-            <span id="wxUpdated" class="tiny">Updated: —</span>
-            <span class="tiny">Source: Open-Meteo</span>
+      <!-- PAGE 1: TODAY (2x2) -->
+      <section class="page" id="page0" aria-label="Today">
+        <div class="grid-2x2">
+          <!-- Weather -->
+          <div class="card" id="cardWeather">
+            <div class="hdr">
+              <h2>Weather</h2>
+              <div class="sub" id="wxSub">Loading…</div>
+            </div>
+            <div class="body" id="wxBody">
+              <div class="center-msg">
+                <div><b>Loading weather…</b><br><span class="muted">If offline, cached data will appear.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- HSL next departures -->
+          <div class="card" id="cardHsl">
+            <div class="hdr">
+              <h2>Next departures</h2>
+              <div class="sub" id="hslSub">Loading…</div>
+            </div>
+            <div class="body" id="hslBody">
+              <div class="center-msg">
+                <div><b>Loading HSL…</b><br><span class="muted">If offline, cached data will appear.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spot price (no scraping; embed/link fallback) -->
+          <div class="card" id="cardElec">
+            <div class="hdr">
+              <h2>Electricity spot price</h2>
+              <div class="sub">Embed + link fallback</div>
+            </div>
+            <div class="body" style="display:grid; grid-template-rows: 1fr auto; gap:12px;">
+              <div class="iframe-wrap">
+                <!-- NOTE: Some sites may block iframing. We still show link fallback. -->
+                <iframe id="iframeElecHome" title="Electricity spot price"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+              </div>
+              <div class="muted" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <span>If the embed is blocked, open the site directly.</span>
+                <a id="elecLink" href="#" target="_blank" rel="noopener"
+                   style="color:var(--accent); font-weight:900; text-decoration:none;">
+                  Open ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar -->
+          <div class="card" id="cardCal">
+            <div class="hdr">
+              <h2>Calendar</h2>
+              <div class="sub">Embed (events list needs OAuth)</div>
+            </div>
+            <div class="body" style="display:grid; grid-template-rows: 1fr auto; gap:12px;">
+              <div class="iframe-wrap">
+                <iframe id="iframeCal" title="Family calendar"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+              </div>
+              <div class="muted">
+                <b>Top 3 events today:</b> Not available without OAuth — showing embedded calendar instead.
+              </div>
+            </div>
           </div>
         </div>
-        <div class="cardBody">
-          <div id="wxLoading" class="loading">Loading weather…</div>
-          <div id="wxError" class="err" style="display:none"></div>
+      </section>
 
-          <div id="wxContent" style="display:none">
-            <div class="wxHero">
-              <div class="wxTopRow">
-                <div class="wxNow">
-                  <div class="wxIcon" id="wxIcon" aria-hidden="true">⛅</div>
-                  <div class="wxNowMain">
-                    <div style="display:flex; align-items:center; gap:12px;">
-  <img id="wxIcon" alt="Weather" style="width:56px;height:56px;filter:drop-shadow(0 6px 12px rgba(0,0,0,.35))">
-                    <div class="wxTemp" id="wxTemp">—°</div></div>
-                    <div class="wxLine">
-                      <div class="wxDesc" id="wxDesc">—</div>
-                      <div class="wxFeels" id="wxFeels">Feels like —°</div>
-                    </div>
-                    <div class="wxLine small muted">
-                      <span id="wxWind">Wind —</span> ·
-                      <span id="wxHum">Humidity —</span> ·
-                      <span id="wxPrecNow">Precip —</span>
-                    </div>
-                  </div>
-                </div>
+      <!-- PAGE 2: PLANNING (two embed iframes) -->
+      <section class="page" id="page1" aria-label="Planning">
+        <div class="two-cols">
+          <div class="card">
+            <div class="hdr">
+              <h2>Electricity — Today</h2>
+              <div class="sub">Embed</div>
+            </div>
+            <div class="body">
+              <div class="iframe-wrap">
+                <iframe id="iframeElecToday" title="Electricity today"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+              </div>
+            </div>
+          </div>
 
-                <div class="wxStats">
-                  <div class="stat"><div class="k">Sunrise</div><div class="v" id="wxSunrise">—</div></div>
-                  <div class="stat"><div class="k">Sunset</div><div class="v" id="wxSunset">—</div></div>
-                  <div class="stat"><div class="k">Today</div><div class="v" id="wxTodayRange">—</div></div>
+          <div class="card">
+            <div class="hdr">
+              <h2>Electricity — Tomorrow</h2>
+              <div class="sub">Embed</div>
+            </div>
+            <div class="body">
+              <div class="iframe-wrap">
+                <iframe id="iframeElecTomorrow" title="Electricity tomorrow"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 3: SCHOOL SCHEDULE (placeholder) -->
+      <section class="page" id="page2" aria-label="School schedule">
+        <div class="schedule-layout">
+          <div class="card">
+            <div class="hdr">
+              <h2>School schedule</h2>
+              <div class="sub">Placeholder (no integration yet)</div>
+            </div>
+            <div class="body">
+              <div class="center-msg">
+                <div>
+                  <b>Ready for future integration</b><br>
+                  <span class="muted">This page is intentionally a clean placeholder.</span>
                 </div>
               </div>
-
-              <div class="hoursStrip" id="hoursStrip"></div>
-            </div>
-
-            <div class="daysStrip" id="daysStrip"></div>
-
-            <div style="margin-top:12px;">
-              <table class="table" aria-label="10-day forecast table">
-                <tbody id="dailyTable"></tbody>
-              </table>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- HSL card (Transit section) moved here -->
-      <div class="card" id="hslCard">
-        <!-- Bottom: 3 equal columns -->
-        <div class="card" style="flex:1; min-height:0;">
-          <div class="cardBody" style="height:100%; min-height:0;">
-            <div class="routesCols routesCols4">
-              <div class="stopRow">
-                <div class="stopTitle">
-                  <b>Kavallinmäki</b>
-                </div>
-                <div class="times" id="kavallinmakiTimes">
-                  <span class="small muted">Loading…</span>
-                </div>
+          <div class="card">
+            <div class="hdr">
+              <h2>Today slots</h2>
+              <div class="sub">Empty slots</div>
+            </div>
+            <div class="body">
+              <div class="slots">
+                <div class="slot"><div class="t">08:00</div><div class="e">—</div></div>
+                <div class="slot"><div class="t">10:00</div><div class="e">—</div></div>
+                <div class="slot"><div class="t">12:00</div><div class="e">—</div></div>
+                <div class="slot"><div class="t">14:00</div><div class="e">—</div></div>
+                <div class="slot"><div class="t">16:00</div><div class="e">—</div></div>
+                <div class="slot"><div class="t">18:00</div><div class="e">—</div></div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <div class="stopRow">
-                <div class="stopTitle">
-                  <b>Viherlaaksontori</b>
-                </div>
-                <div class="times" id="viherlaaksontoriTimes">
-                  <span class="small muted">Loading…</span>
-                </div>
+      <!-- PAGE 4: DETAILED HSL (3 iframe columns) -->
+      <section class="page" id="page3" aria-label="Detailed HSL">
+        <div class="three-cols">
+          <div class="card">
+            <div class="hdr">
+              <h2>Kavallinmäki</h2>
+              <div class="sub">HSL Reittiopas</div>
+            </div>
+            <div class="body">
+              <div class="iframe-wrap">
+                <iframe id="iframeStop1" title="Kavallinmäki stop"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
               </div>
+            </div>
+          </div>
 
-              <div class="stopRow">
-                <div class="stopTitle">
-                  <b>Leppävaara → Helsinki</b>
-                </div>
-                <div class="times" id="leppavaaraHkiTimes">
-                  <span class="small muted">Loading…</span>
-                </div>
+          <div class="card">
+            <div class="hdr">
+              <h2>Viherlaaksontori</h2>
+              <div class="sub">HSL Reittiopas</div>
+            </div>
+            <div class="body">
+              <div class="iframe-wrap">
+                <iframe id="iframeStop2" title="Viherlaaksontori stop"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
               </div>
+            </div>
+          </div>
 
-<div class="stackCol">
-  <div class="stopRow">
-    <div class="stopTitle"><b>&nbsp;</b></div>
-    <div class="summary" id="summary1">Loading…</div>
-  </div>
-
-  <div class="stopRow">
-    <div class="stopTitle"><b>&nbsp;</b></div>
-    <div class="summary" id="summary2">Loading…</div>
-  </div>
-
-  <div class="stopRow">
-    <div class="stopTitle"><b>&nbsp;</b></div>
-    <div class="summary" id="summary3">Loading…</div>
-  </div>
-</div>
+          <div class="card">
+            <div class="hdr">
+              <h2>Leppävaara → Helsinki</h2>
+              <div class="sub">HSL Reittiopas</div>
+            </div>
+            <div class="body">
+              <div class="iframe-wrap">
+                <iframe id="iframeStop3" title="Leppävaara stop"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-    </section>
-
-
-    <!-- =========================
-         PAGE 2: PLANNING
-    ========================== -->
-    <section class="page" id="planningPage" aria-label="Planning page">
-      <div class="planningGrid">
-
-        <div class="card">
-          <div class="cardHeader">
-            <h2>Google Calendar · Week agenda</h2>
-            <div class="meta">
-              <span class="tiny">Embedded</span>
-            </div>
-          </div>
-          <div class="iframeWrap">
-            <!-- IMPORTANT: We never reset src to avoid refresh loops. -->
-            <div class="calendarZoom">
-            <iframe
-                id="gcalFrame"
-                title="Google Calendar"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                src=""></iframe>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="cardHeader">
-            <h2>Electricity price chart</h2>
-            <div class="meta">
-              <span id="powerUpdated" class="tiny">Updated: —</span>
-            </div>
-          </div>
-          <div class="cardBody">
-<div class="powerEmbeds">
-  <div class="powerEmbed">
-    <div class="powerEmbedHeader">Today</div>
-    <iframe
-      id="powerFrame"
-      title="Sähkön hinnat toimittaa sahkonhintatanaan.fi"
-      src="https://www.sahkonhintatanaan.fi?mode=embed&layout=minimal&hide-examples=1&zoom=1.2&background=ffffff"
-      onload="onPowerIframeLoad()"></iframe>
-  </div>
-
-  <div class="powerEmbed">
-    <div class="powerEmbedHeader">Tomorrow</div>
-    <iframe
-      id="powerFrameTomorrow"
-      title="Sähkön hinnat huomenna toimittaa sahkonhintatanaan.fi"
-      src="https://www.sahkonhintatanaan.fi/huomenna?mode=embed&layout=minimal&hide-examples=1&zoom=1.2&background=ffffff"
-      onload="onPowerIframeLoad()"></iframe>
-  </div>
-</div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-  </div>
-</div>
-
-<script>
-
-  setTimeout(() => location.reload(true), 5 * 60 * 1000); // every 5 minutes
-
-/* =========================================================
-   CONFIG SECTION (edit safely)
-   - Stops: use HSL stop IDs like "HSL:1234567"
-   - Digitransit GraphQL endpoint is public
-   - Weather uses Open-Meteo (no key)
-   - Fingrid requires API key for REST API access
-========================================================= */
-const CONFIG = {
-  // Auto-rotate pages (ms)
-  rotationIntervalMs: 60_000,
-
-  // Location: Viherlaakso, Espoo (adjust if you want)
-  weather: {
-    name: "Viherlaakso, Espoo",
-    // Approx coordinates for Viherlaakso area (you can tweak)
-    lat: 60.243,
-    lon: 24.792,
-    timezone: "Europe/Helsinki",
-    hourlyCount: 12,   // next hours strip count
-    daysCount: 12     // daily rows
-  },
-
-  // HSL / Digitransit GraphQL
-  // Docs: https://digitransit.fi/en/developers/apis/1-routing-api/0-graphql/ (GraphQL) and stops queries
-transit: {
-  graphqlUrl: "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1",
-  apiKey: "90b312641ab7489c8154c9083819329c",
-  refreshMs: 25_000,
-  departuresPerStop: 5,
-
-  stops: [
-    { id: "HSL:2151204", label: "Kavallinmäki", target: "kavallinmakiTimes" },
-    { id: "HSL:2151208", label: "Viherlaaksontori", target: "viherlaaksontoriTimes" },
-    { id: "HSL:2111552", label: "Leppävaara → Helsinki", target: "leppavaaraHkiTimes" }
-  ]
-},
-
-  // Google Calendar embed (week agenda)
-  calendar: {
-    // Your provided calendar URL:
-    baseEmbedUrl: "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki",
-    // mode=AGENDA shows a schedule view (Google supports mode=AGENDA / WEEK / MONTH)
-    params: {
-      mode: "AGENDA",
-      wkst: "2",          // week starts Monday
-      showTitle: "0",
-      showNav: "0",
-      showDate: "0",
-      showPrint: "0",
-      showTabs: "0",
-      showCalendars: "0",
-      showTz: "0"
-    }
-  },
-
-  // (power config removed)
-};
-/* ======================= END CONFIG ======================= */
-
-
-/* =========================================================
-   UTILITIES
-========================================================= */
-const $ = (sel) => document.querySelector(sel);
-function setPillState(pillId, state){
-  const pill = document.getElementById(pillId);
-  if(!pill) return;
-  pill.classList.remove("ok","err");
-  if(state === "ok") pill.classList.add("ok");
-  if(state === "err") pill.classList.add("err");
-}
-
-let powerTimeout = null;
-
-function initPowerStatus(){
-  // pessimistic default
-  safeText(document.getElementById("powerState"), navigator.onLine ? "Loading…" : "Offline");
-  setPillState("powerPill", navigator.onLine ? "err" : "err");
-
-  // if iframe doesn't load in 10s → error
-  powerTimeout = setTimeout(()=>{
-    safeText(document.getElementById("powerState"), navigator.onLine ? "Error" : "Offline");
-    setPillState("powerPill", "err");
-  }, 10_000);
-}
-
-function onPowerIframeLoad(){
-  if(!navigator.onLine){
-    setPowerStatus("err", "Offline");
-    return;
-  }
-  setPowerStatus("ok", "OK");
-  if(powerTimeout) clearTimeout(powerTimeout);
-}
-
-function setPowerStatus(state, label){
-  safeText(document.getElementById("powerState"), label || (state === "ok" ? "OK" : "Error"));
-  setPillState("powerPill", state);
-}
-
-
-let lastOnline = null;
-let didReloadOnRecovery = false;
-let lastRecoveryRefreshAt = 0;
-
-function handlePowerNetworkChange(){
-  const online = navigator.onLine;
-  if(lastOnline === online) return;
-  lastOnline = online;
-
-  if(!online){
-    // If network drops after a successful iframe load, reflect that immediately
-    setPowerStatus("err", "Offline");
-    if(powerTimeout) clearTimeout(powerTimeout);
-    return;
-  }
-
-  // Network came back: pessimistic until iframe loads again
-  initPowerStatus();
-
-  // Try to reload the iframe once to confirm the service is reachable again
-  const f = document.getElementById("powerFrame");
-  if(f){
-    const base = "https://www.sahkonhintatanaan.fi?mode=embed";
-    // cache-bust to force a real reload only when network state flips to online
-    f.src = base + "&t=" + Date.now();
-  }
-}
-
-function pad2(n){ return String(n).padStart(2,"0"); }
-function fmtTimeHHMM(d){
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-}
-function fmtDateShort(d){
-  const w = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
-  return `${w} ${pad2(d.getDate())}.${pad2(d.getMonth()+1)}`;
-}
-function safeText(el, txt){ if(el) el.textContent = txt; }
-
-function setVisible(id, show){
-  const el = typeof id === "string" ? $(id) : id;
-  if(!el) return;
-  el.style.display = show ? "" : "none";
-}
-
-
-let calendarRecoveryTimers = [];
-
-function clearCalendarRecoveryTimers(){
-  calendarRecoveryTimers.forEach(t => clearTimeout(t));
-  calendarRecoveryTimers = [];
-}
-
-function reloadCalendarWithCacheBust(){
-  const cal = document.getElementById("gcalFrame");
-  if(!cal) return;
-
-  const base = new URL(CONFIG.calendar.baseEmbedUrl);
-  const params = CONFIG.calendar.params || {};
-  Object.entries(params).forEach(([k,v]) => base.searchParams.set(k, v));
-
-  // cache-bust so Google refreshes after network recovery
-  base.searchParams.set("t", String(Date.now()));
-  cal.src = base.toString();
-}
-
-function refreshOnNetworkBack(){
-  const now = Date.now();
-  if(now - lastRecoveryRefreshAt < 3000) return;
-  lastRecoveryRefreshAt = now;
-
-  if(!navigator.onLine) return;
-
-  // Weather: re-fetch immediately
-  loadWeather();
-
-  // Calendar: reload immediately + retry (network may report online before DNS/route is ready)
-  clearCalendarRecoveryTimers();
-  reloadCalendarWithCacheBust();
-  calendarRecoveryTimers.push(setTimeout(reloadCalendarWithCacheBust, 2500));
-  calendarRecoveryTimers.push(setTimeout(reloadCalendarWithCacheBust, 6500));
-  calendarRecoveryTimers.push(setTimeout(reloadCalendarWithCacheBust, 12000));
-
-  // Power: re-check by reloading the iframe (power handler will flip pill on load)
-  const p = document.getElementById("powerFrame");
-  if(p){
-    const base = "https://www.sahkonhintatanaan.fi?mode=embed";
-    p.src = base + "&t=" + Date.now();
-  }
-}
-
-function networkBadge(){
-  const online = navigator.onLine;
-
-  safeText($("#netState"), online ? "Online" : "Offline");
-  setPillState("netPill", online ? "ok" : "err");
-
-  // Detect offline → online transition and hard-refresh the whole dashboard
-  if(online && lastOnline === false && !didReloadOnRecovery){
-    didReloadOnRecovery = true;
-    // Force a full reload to refresh all embeds and data cleanly
-    location.reload();
-    return;
-  }
-
-  // Reset the one-shot guard when we go offline again
-  if(!online){
-    didReloadOnRecovery = false;
-    setPowerStatus("err", "Offline");
-  }
-
-  // Remember last state
-  lastOnline = online;
-}
-window.addEventListener("online", networkBadge);
-window.addEventListener("offline", networkBadge);
-
-/* =========================================================
-   PAGE ROTATION (Today ↔ Planning every 10s)
-========================================================= */
-const PAGE_IDS = ["today", "planning"];
-let pageIndex = 0; // start from Today (weather) page
-
-function showPage(which){
-  for(const id of PAGE_IDS){
-    const el = document.getElementById(id + "Page");
-    if(!el) continue;
-    el.classList.remove("active","pageFadeIn");
-  }
-
-  const active = document.getElementById(which + "Page");
-  if(active){
-    active.classList.add("active","pageFadeIn");
-    safeText($("#pagePill"), `${which.charAt(0).toUpperCase()+which.slice(1)} · auto-rotate`);
-  }
-
-  // remove animation class after fade-in
-  setTimeout(()=>{
-    for(const id of PAGE_IDS){
-      const el = document.getElementById(id + "Page");
-      if(el) el.classList.remove("pageFadeIn");
-    }
-  }, 700);
-}
-
-
-setInterval(()=>{
-  pageIndex = (pageIndex + 1) % PAGE_IDS.length;
-  showPage(PAGE_IDS[pageIndex]);
-}, CONFIG.rotationIntervalMs);
-
-// Ensure Today (weather) page is shown first on load
-showPage("today");
-
-/* =========================================================
-   CLOCK
-========================================================= */
-function tickClock(){
-  const now = new Date();
-
-  const datePart = now.toLocaleDateString(undefined, {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
-
-  const timePart = now.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-
-  $("#clockHeading").innerHTML = `${datePart} <b>${timePart}</b>`;
-}
-setInterval(tickClock, 1000);
-tickClock();
-
-/* =========================================================
-   WEATHER (Open-Meteo)
-   Docs: https://open-meteo.com/en/docs
-========================================================= */
-let latestWx = null;
-
-const WX_CODE = {
-  0:  { t:"Clear",           i:"☀️", kind:"sun" },
-  1:  { t:"Mostly clear",    i:"🌤️", kind:"sun" },
-  2:  { t:"Partly cloudy",   i:"⛅", kind:"cloud" },
-  3:  { t:"Cloudy",          i:"☁️", kind:"cloud" },
-  45: { t:"Fog",             i:"🌫️", kind:"cloud" },
-  48: { t:"Rime fog",        i:"🌫️", kind:"cloud" },
-  51: { t:"Light drizzle",   i:"🌦️", kind:"rain" },
-  53: { t:"Drizzle",         i:"🌦️", kind:"rain" },
-  55: { t:"Heavy drizzle",   i:"🌧️", kind:"rain" },
-  61: { t:"Light rain",      i:"🌧️", kind:"rain" },
-  63: { t:"Rain",            i:"🌧️", kind:"rain" },
-  65: { t:"Heavy rain",      i:"⛈️", kind:"rain" },
-  71: { t:"Light snow",      i:"🌨️", kind:"snow" },
-  73: { t:"Snow",            i:"🌨️", kind:"snow" },
-  75: { t:"Heavy snow",      i:"❄️", kind:"snow" },
-  80: { t:"Rain showers",    i:"🌦️", kind:"rain" },
-  81: { t:"Heavy showers",   i:"🌧️", kind:"rain" },
-  82: { t:"Violent showers", i:"⛈️", kind:"rain" },
-  95: { t:"Thunderstorm",    i:"⛈️", kind:"storm" },
-  96: { t:"Storm + hail",    i:"⛈️", kind:"storm" },
-  99: { t:"Storm + hail",    i:"⛈️", kind:"storm" }
-};
-
-function wxLabel(code){
-  return WX_CODE[code] || { t:`Code ${code}`, i:"🌡️", kind:"cloud" };
-}
-
-async function loadWeather(){
-  setVisible("#wxLoading", true);
-  setVisible("#wxError", false);
-  setVisible("#wxContent", false);
-
-  try{
-    const { lat, lon, timezone, hourlyCount, daysCount } = CONFIG.weather;
-
-    // Request current + hourly + daily
-    const url = new URL("https://api.open-meteo.com/v1/forecast");
-    url.searchParams.set("latitude", lat);
-    url.searchParams.set("longitude", lon);
-    url.searchParams.set("timezone", timezone);
-    url.searchParams.set("current", "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,precipitation");
-    url.searchParams.set("hourly", "temperature_2m,apparent_temperature,precipitation,weather_code");
-    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,snowfall_sum,sunrise,sunset,weather_code");
-    url.searchParams.set("forecast_days", String(Math.max(daysCount, 10)));
-
-    const r = await fetch(url.toString(), { cache:"no-store" });
-    if(!r.ok) throw new Error(`Weather API error (${r.status})`);
-    const data = await r.json();
-    latestWx = data;
-
-    // Update state pills
-    safeText($("#wxState"), "OK");
-    setPillState("wxPill", "ok");
-    safeText($("#wxUpdated"), `Updated: ${fmtTimeHHMM(new Date())}`);
-
-    // Fill "now"
-    const cur = data.current;
-    const code = cur.weather_code;
-    const w = wxLabel(code);
-
-    $("#wxIcon").textContent = pickDayNightIcon(w.i, data);
-    $("#wxTemp").textContent = `${Math.round(cur.temperature_2m)}°`;
-    $("#wxDesc").textContent = w.t;
-    $("#wxFeels").textContent = `Feels like ${Math.round(cur.apparent_temperature)}°`;
-    $("#wxWind").textContent = `Wind ${Math.round(cur.wind_speed_10m)} m/s`;
-    $("#wxHum").textContent = `Humidity ${Math.round(cur.relative_humidity_2m)}%`;
-    $("#wxPrecNow").textContent = `Precip ${Number(cur.precipitation).toFixed(1)} mm`;
-
-    // Sunrise/sunset/today range
-    const sunrise = new Date(data.daily.sunrise[0]);
-    const sunset  = new Date(data.daily.sunset[0]);
-    $("#wxSunrise").textContent = fmtTimeHHMM(sunrise);
-    $("#wxSunset").textContent  = fmtTimeHHMM(sunset);
-    $("#wxTodayRange").textContent = `${Math.round(data.daily.temperature_2m_min[0])}° … ${Math.round(data.daily.temperature_2m_max[0])}°`;
-
-    // Next hours strip
-    const hs = $("#hoursStrip");
-    hs.innerHTML = "";
-    const now = new Date();
-    const hourly = data.hourly;
-    // Find nearest hour index
-    let idx = 0;
-    for(let i=0;i<hourly.time.length;i++){
-      const t = new Date(hourly.time[i]);
-      if(t >= now){ idx = i; break; }
-    }
-    for(let k=0;k<CONFIG.weather.hourlyCount;k++){
-      const i = idx + k;
-      if(i >= hourly.time.length) break;
-      const t = new Date(hourly.time[i]);
-      const wc = wxLabel(hourly.weather_code[i]);
-      const temp = Math.round(hourly.temperature_2m[i]);
-      const pr = Number(hourly.precipitation[i] || 0);
-      const div = document.createElement("div");
-      div.className = "hourBox";
-      div.innerHTML = `
-        <div class="i">${pickDayNightIcon(wc.i, data, t)}</div>
-        <div class="hourMeta">
-          <div class="t">${fmtTimeHHMM(t)}</div>
-          <div class="p">${pr.toFixed(1)} mm</div>
-          <div class="c">${temp}°</div>
-        </div>
-      `;
-      hs.appendChild(div);
-    }
-
-    // 10-day boxes row
-const daysStrip = $("#daysStrip");
-daysStrip.innerHTML = "";
-
-for(let i=0; i<Math.min(CONFIG.weather.daysCount, data.daily.time.length); i++){
-  const date = new Date(data.daily.time[i] + "T12:00:00");
-  const wc = wxLabel(data.daily.weather_code[i]);
-
-  const tMin = Math.round(data.daily.temperature_2m_min[i]);
-  const tMax = Math.round(data.daily.temperature_2m_max[i]);
-  const rain = Number(data.daily.precipitation_sum[i] || 0);
-  const snow = Number(data.daily.snowfall_sum[i] || 0);
-
-  const box = document.createElement("div");
-  box.className = "dayBox";
-  box.innerHTML = `
-    <div class="i">${pickDayNightIcon(wc.i, data, date)}</div>
-    <div style="display:flex; flex-direction:column; gap:2px;">
-      <div class="d">
-        ${date.toLocaleDateString(undefined,{weekday:"short"})}
-        <span style="display:block; font-size:10px; opacity:.85; margin-top:2px;">
-          ${date.toLocaleDateString(undefined,{day:"2-digit", month:"short"})}
-        </span>
-      </div>
-      <div class="t">
-        <span>${tMin}°</span>
-        <span style="opacity:.7"> / </span>
-        <span>${tMax}°</span>
-      </div>
-      <div class="p">
-        💧 ${rain.toFixed(1)} mm · ❄️ ${snow.toFixed(1)} mm
-      </div>
     </div>
-  `;
-  daysStrip.appendChild(box);
-}
-    // Apply theme + start weather animation
-    applyAdaptiveThemeFromWeather(data);
-    setWxEffect(w.kind, isNightNow(data));
+  </main>
 
-    // Show content
-    setVisible("#wxLoading", false);
-    setVisible("#wxContent", true);
+  <div class="page-dots" id="pageDots" aria-label="Page navigation dots"></div>
 
-  }catch(e){
-    safeText($("#wxState"), "Error");
-    setVisible("#wxLoading", false);
-    setVisible("#wxContent", false);
-    setVisible("#wxError", true);
-    setPillState("wxPill", "err");
-    $("#wxError").textContent = `Weather failed: ${e.message}`;
-    // still apply time-based theme even if weather fails
-    applyTimeOnlyTheme();
-    setWxEffect("none", isNightNow(null));
-  }
-}
+  <script>
+    /***********************************************************************
+     * CONFIG (MUST BE EDITABLE + USED EVERYWHERE)
+     ***********************************************************************/
+    const CONFIG = {
+      ROTATION_MS: 20000,
 
-function isNightNow(wx){
-  try{
-    if(!wx) {
-      const h = new Date().getHours();
-      return (h < 7 || h >= 20);
-    }
-    const sr = new Date(wx.daily.sunrise[0]);
-    const ss = new Date(wx.daily.sunset[0]);
-    const now = new Date();
-    return now < sr || now > ss;
-  }catch{
-    return false;
-  }
-}
+      DATA_REFRESH: {
+        WEATHER_MS: 10 * 60 * 1000,
+        HSL_MS: 30 * 1000
+      },
 
-function pickDayNightIcon(dayIcon, wx, tOpt){
-  const night = (() => {
-    if(!wx) return false;
-    const sr = new Date(wx.daily.sunrise[0]);
-    const ss = new Date(wx.daily.sunset[0]);
-    const t = tOpt ? new Date(tOpt) : new Date();
-    return t < sr || t > ss;
-  })();
-  if(night){
-    // If clear-ish, show moon; else keep clouds/rain/snow
-    if(dayIcon === "☀️" || dayIcon === "🌤️") return "🌙";
-  }
-  return dayIcon;
-}
+      FETCH_TIMEOUT_MS: 8000,
 
-function applyTimeOnlyTheme(){
-  setCSSTheme({
-    bg1:"#050b1e",
-    bg2:"#081a3d",
-    text:"#f8fafc",
-    cardAlpha:.08,
-    strokeAlpha:.14,
-    mutedAlpha:.72
-  });
-}
+      BACKOFF: {
+        START_MS: 5000,
+        MULTIPLIER: 2,
+        MAX_MS: 5 * 60 * 1000
+      },
 
-function applyAdaptiveThemeFromWeather(wx){
-  // Default clean theme
-  const root = document.documentElement;
-  root.classList.remove(
-    "wx-theme-freezing",
-    "wx-theme-cold",
-    "wx-theme-normal",
-    "wx-theme-warm",
-    "wx-theme-hot"
-  );
+      TIMEZONE: "Europe/Helsinki",
 
-  if(!wx || !wx.current){
-    root.classList.add("wx-theme-normal");
-    return;
-  }
+      LOCATION: {
+        name: "Viherlaakso, Espoo",
+        lat: 60.23,
+        lon: 24.74
+      },
 
-  const feels = wx.current.apparent_temperature;
+      WEATHER: {
+        // Open-Meteo current weather
+        endpoint: "https://api.open-meteo.com/v1/forecast",
+        timezoneParam: "Europe/Helsinki"
+      },
 
-  if(feels <= -10){
-    root.classList.add("wx-theme-freezing");   // freezing cold
-  }else if(feels > -10 && feels <= 5){
-    root.classList.add("wx-theme-cold");        // cold
-  }else if(feels > 5 && feels <= 20){
-    root.classList.add("wx-theme-normal");      // normal / neutral
-  }else if(feels > 20 && feels <= 28){
-    root.classList.add("wx-theme-warm");        // warm
-  }else{
-    root.classList.add("wx-theme-hot");         // extreme heat
-  }
-}
+      HSL: {
+        endpoint: "https://api.digitransit.fi/routing/v2/hsl/gtfs/v1",
+        apiKey: "90b312641ab7489c8154c9083819329c",
+        stops: [
+          { id: "HSL:2151204", label: "Kavallinmäki", format: "Bus {routeShortName} leaves in {mins} mins" },
+          { id: "HSL:2151208", label: "Viherlaaksontori", format: "Bus {routeShortName} leaves in {mins} mins" },
+          { id: "HSL:2111552", label: "Leppävaara → Helsinki", format: "Train {routeShortName} leaves in {mins} mins from Leppävaara" }
+        ],
+        departuresPerStop: 5
+      },
 
-function setCSSTheme({bg1,bg2,text,cardAlpha,strokeAlpha,mutedAlpha}){
-  const r = document.documentElement.style;
-  if(bg1) r.setProperty("--bg1", bg1);
-  if(bg2) r.setProperty("--bg2", bg2);
-  if(text) r.setProperty("--text", text);
-  if(cardAlpha != null){
-    r.setProperty("--card", `rgba(255,255,255,${cardAlpha})`);
-    r.setProperty("--card2", `rgba(255,255,255,${Math.max(0, cardAlpha-0.03)})`);
-  }
-  if(strokeAlpha != null) r.setProperty("--stroke", `rgba(255,255,255,${strokeAlpha})`);
-  if(mutedAlpha != null) r.setProperty("--muted", `rgba(248,250,252,${mutedAlpha})`);
-}
+      ELECTRICITY: {
+        embedToday: "https://www.sahkonhintatanaan.fi?mode=embed&layout=minimal&hide-examples=1&zoom=1.2&background=ffffff",
+        embedTomorrow: "https://www.sahkonhintatanaan.fi/huomenna?mode=embed&layout=minimal&hide-examples=1&zoom=1.2&background=ffffff",
+        homeUrl: "https://www.sahkonhintatanaan.fi"
+      },
 
-/* =========================================================
-   HSL / DIGITRANSIT REALTIME DEPARTURES (GraphQL)
-   Docs: https://digitransit.fi/en/developers/apis/1-routing-api/stops/
-========================================================= */
-let hslTimer = null;
+      CALENDAR: {
+        embedUrl: "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki"
+      },
 
-async function gql(query, variables){
-  const r = await fetch(CONFIG.transit.graphqlUrl, {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Accept":"application/json",
-      "digitransit-subscription-key": CONFIG.transit.apiKey
-    },
-    body: JSON.stringify({ query, variables })
-  });
-  if(!r.ok) throw new Error(`HSL API error (${r.status})`);
-  const j = await r.json();
-  if(j.errors?.length) throw new Error(j.errors[0].message || "GraphQL error");
-  return j.data;
-}
+      IFRAME: {
+        // For 24/7 dashboards: reduce CPU usage
+        allowPointerEvents: false
+      }
+    };
 
-function depTimeObj(st){
-  // serviceDay is unix timestamp (seconds). realtimeDeparture/scheduledDeparture in seconds from midnight.
-  const sec = (st.realtimeDeparture ?? st.scheduledDeparture) || st.scheduledDeparture || 0;
-  const base = (st.serviceDay || 0) * 1000;
-  return new Date(base + sec * 1000);
-}
+    /***********************************************************************
+     * STATE (latest data + timestamps + statuses)
+     ***********************************************************************/
+    const state = {
+      // Network
+      online: navigator.onLine,
 
-function minutesUntil(d){
-  const ms = d - new Date();
-  return Math.round(ms / 60000);
-}
+      // Weather
+      weather: null,                 // { temperature_2m, apparent_temperature, weather_code, is_day, fetchedAtMs }
+      weatherStatus: "init",         // "init" | "ok" | "down"
+      weatherLastSuccessMs: 0,
+      weatherLastAttemptMs: 0,
+      weatherBackoffMs: CONFIG.BACKOFF.START_MS,
+      weatherNextTryMs: 0,
 
-function formatDepartureChip(st){
-  const route = st.trip?.route?.shortName || "—";
-  const headsign = st.headsign || "";
-  const t = depTimeObj(st);
-  const m = minutesUntil(t);
-  const mTxt = (m >= 0) ? `${m} min` : "now";
+      // HSL
+      hsl: null,                     // { perStop: [{id,label,routeShortName,mins,departureMs}], fetchedAtMs }
+      hslStatus: "init",
+      hslLastSuccessMs: 0,
+      hslLastAttemptMs: 0,
+      hslBackoffMs: CONFIG.BACKOFF.START_MS,
+      hslNextTryMs: 0,
 
-  const hsSafe = escapeHTML(headsign);
+      // Router
+      pageIndex: 0,
+      pageCount: 4,
+      pausedUntilMs: 0,              // rotation paused until (manual nav), then auto resumes
 
-  return `
-    <div class="chip" title="${hsSafe}">
-      <span class="r">${escapeHTML(route)}</span>
-      <span class="to">${hsSafe}</span>
-      <span class="time">${fmtTimeHHMM(t)}</span>
-      <span class="m">${mTxt}</span>
-    </div>
-  `;
-}
+      // Render throttling (avoid unnecessary DOM writes)
+      lastRenderKey: {
+        status: "",
+        weather: "",
+        hsl: ""
+      },
 
-function filterByRoute(stoptimes){
-  const f = CONFIG.transit.routeFilter;
-  if(!f || !f.length) return stoptimes;
-  return stoptimes.filter(st => f.includes(st.trip?.route?.shortName));
-}
+      // Scheduler safety: track intervals/timeouts to avoid duplicates
+      timers: {
+        clock: null,
+        rotation: null,
+        weather: null,
+        hsl: null,
+        retryTick: null
+      }
+    };
 
-async function loadHSL(){
-  try{
-    safeText($("#hslState"), "Loading");
+    /***********************************************************************
+     * UTILS (time, formatting, DOM helpers)
+     ***********************************************************************/
+    const utils = {
+      // Simple DOM helpers
+      el(id){ return document.getElementById(id); },
+      qs(sel, root=document){ return root.querySelector(sel); },
+      qsa(sel, root=document){ return Array.from(root.querySelectorAll(sel)); },
 
-    const query = `
-      query StopDepartures($id: String!, $n: Int!) {
-        stop(id: $id) {
-          name
-          stoptimesWithoutPatterns(numberOfDepartures: $n) {
-            realtimeDeparture
-            scheduledDeparture
-            serviceDay
-            headsign
-            trip {
-              route { shortName }
+      // Safe set HTML only when changed (prevents flicker & reduces work)
+      setHTML(el, html){
+        if (!el) return;
+        if (el.__lastHTML !== html){
+          el.innerHTML = html;
+          el.__lastHTML = html;
+        }
+      },
+
+      // Safe set text only when changed
+      setText(el, text){
+        if (!el) return;
+        if (el.__lastText !== text){
+          el.textContent = text;
+          el.__lastText = text;
+        }
+      },
+
+      // Clamp for numbers
+      clamp(n, a, b){ return Math.min(b, Math.max(a, n)); },
+
+      // Create a time formatter in the configured timezone
+      fmtTime(date, opts){
+        try{
+          return new Intl.DateTimeFormat("en-GB", { timeZone: CONFIG.TIMEZONE, ...opts }).format(date);
+        }catch{
+          // Fallback (should rarely happen)
+          return date.toLocaleString();
+        }
+      },
+
+      // Day + date heading style
+      formatHeadingNow(){
+        const now = new Date();
+        const day = utils.fmtTime(now, { weekday: "long" });
+        const date = utils.fmtTime(now, { year:"numeric", month:"short", day:"2-digit" });
+        const time = utils.fmtTime(now, { hour:"2-digit", minute:"2-digit" });
+        return { day, date, time };
+      },
+
+      // Relative age like "2m old" / "stale"
+      ageLabel(fromMs){
+        if (!fromMs) return "—";
+        const d = Date.now() - fromMs;
+        const s = Math.max(0, Math.floor(d/1000));
+        if (s < 60) return `${s}s old`;
+        const m = Math.floor(s/60);
+        if (m < 60) return `${m}m old`;
+        const h = Math.floor(m/60);
+        return `${h}h old`;
+      },
+
+      // Exponential backoff calculator
+      nextBackoff(currentMs){
+        const next = Math.floor(currentMs * CONFIG.BACKOFF.MULTIPLIER);
+        return Math.min(next, CONFIG.BACKOFF.MAX_MS);
+      },
+
+      // Fetch wrapper with AbortController timeout + JSON parsing
+      async fetchJSON(url, options={}, timeoutMs=CONFIG.FETCH_TIMEOUT_MS){
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), timeoutMs);
+
+        try{
+          const res = await fetch(url, { ...options, signal: controller.signal });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return await res.json();
+        }finally{
+          clearTimeout(t);
+        }
+      },
+
+      // POST JSON helper
+      async postJSON(url, bodyObj, headers={}, timeoutMs=CONFIG.FETCH_TIMEOUT_MS){
+        return utils.fetchJSON(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers
+          },
+          body: JSON.stringify(bodyObj)
+        }, timeoutMs);
+      },
+
+      // Very small template formatter
+      formatTemplate(tpl, vars){
+        return tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ""));
+      }
+    };
+
+    /***********************************************************************
+     * CACHE (localStorage last-good data)
+     ***********************************************************************/
+    const cache = {
+      keys: {
+        weather: "tvDash.weather.v1",
+        hsl: "tvDash.hsl.v1"
+      },
+
+      load(){
+        // Load cached weather
+        try{
+          const w = localStorage.getItem(cache.keys.weather);
+          if (w){
+            const obj = JSON.parse(w);
+            if (obj && obj.data && obj.savedAtMs){
+              state.weather = obj.data;
+              // Keep showing it immediately; status becomes "init" until we confirm fresh
+              // but UI will label as cached/stale based on age.
             }
+          }
+        }catch(e){ /* ignore */ }
+
+        // Load cached hsl
+        try{
+          const h = localStorage.getItem(cache.keys.hsl);
+          if (h){
+            const obj = JSON.parse(h);
+            if (obj && obj.data && obj.savedAtMs){
+              state.hsl = obj.data;
+            }
+          }
+        }catch(e){ /* ignore */ }
+      },
+
+      saveWeather(){
+        try{
+          if (!state.weather) return;
+          localStorage.setItem(cache.keys.weather, JSON.stringify({
+            savedAtMs: Date.now(),
+            data: state.weather
+          }));
+        }catch(e){ /* ignore quota */ }
+      },
+
+      saveHsl(){
+        try{
+          if (!state.hsl) return;
+          localStorage.setItem(cache.keys.hsl, JSON.stringify({
+            savedAtMs: Date.now(),
+            data: state.hsl
+          }));
+        }catch(e){ /* ignore quota */ }
+      }
+    };
+
+    /***********************************************************************
+     * API (weather/hsl fetchers) + backoff coordination
+     ***********************************************************************/
+    const api = {
+      // Weather: exact request as required
+      weatherUrl(){
+        const { lat, lon } = CONFIG.LOCATION;
+        // Optional cache-busting: cb param
+        const cb = Date.now();
+        const tz = encodeURIComponent(CONFIG.WEATHER.timezoneParam);
+        return `${CONFIG.WEATHER.endpoint}?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,is_day&timezone=${tz}&cb=${cb}`;
+      },
+
+      async fetchWeather(){
+        state.weatherLastAttemptMs = Date.now();
+        try{
+          const json = await utils.fetchJSON(api.weatherUrl(), {}, CONFIG.FETCH_TIMEOUT_MS);
+
+          // Defensive parsing
+          const cur = json && json.current ? json.current : null;
+          if (!cur) throw new Error("Missing 'current' in response");
+
+          const data = {
+            temperature_2m: cur.temperature_2m,
+            apparent_temperature: cur.apparent_temperature,
+            weather_code: cur.weather_code,
+            is_day: cur.is_day,
+            fetchedAtMs: Date.now()
+          };
+
+          state.weather = data;
+          state.weatherStatus = "ok";
+          state.weatherLastSuccessMs = Date.now();
+          state.weatherBackoffMs = CONFIG.BACKOFF.START_MS;
+          state.weatherNextTryMs = 0;
+
+          cache.saveWeather();
+          render.weather();     // update card
+          theme.apply();        // refine theme now that we have weather
+
+        }catch(err){
+          // Mark down but keep UI alive using cached data (if any)
+          state.weatherStatus = "down";
+          // Backoff schedule
+          state.weatherBackoffMs = utils.nextBackoff(state.weatherBackoffMs);
+          state.weatherNextTryMs = Date.now() + state.weatherBackoffMs;
+
+          render.weather();     // show error badge
+          theme.apply();        // fall showing time-of-day only (still ok)
+
+        }finally{
+          render.statusBar();
+        }
+      },
+
+      // HSL GraphQL: exact query with aliases
+      hslQuery(){
+        return `
+          query($s1: String!, $s2: String!, $s3: String!, $n: Int!) {
+            a: stop(id: $s1) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
+            b: stop(id: $s2) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
+            c: stop(id: $s3) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
+          }
+        `.trim();
+      },
+
+      async fetchHsl(){
+        state.hslLastAttemptMs = Date.now();
+        try{
+          const stops = CONFIG.HSL.stops;
+          const vars = {
+            s1: stops[0].id,
+            s2: stops[1].id,
+            s3: stops[2].id,
+            n: CONFIG.HSL.departuresPerStop
+          };
+
+          const json = await utils.postJSON(
+            CONFIG.HSL.endpoint,
+            { query: api.hslQuery(), variables: vars },
+            { "digitransit-subscription-key": CONFIG.HSL.apiKey },
+            CONFIG.FETCH_TIMEOUT_MS
+          );
+
+          if (!json || json.errors) throw new Error("GraphQL errors");
+          const data = json.data;
+          if (!data) throw new Error("Missing data");
+
+          // Compute soonest departure per stop
+          const nowMs = Date.now();
+
+          function soonest(aliasObj){
+            const list = aliasObj && aliasObj.stoptimesWithoutPatterns ? aliasObj.stoptimesWithoutPatterns : [];
+            let best = null;
+
+            for (const st of list){
+              if (!st) continue;
+              const serviceDay = (st.serviceDay || 0) * 1000;
+              const depSec = st.realtime ? st.realtimeDeparture : st.scheduledDeparture;
+              const depMs = serviceDay + (depSec || 0) * 1000;
+
+              // compute minutes (never negative)
+              const mins = Math.max(0, Math.floor((depMs - nowMs) / 60000));
+              const routeShortName = st.trip && st.trip.routeShortName ? st.trip.routeShortName : "?";
+
+              if (!best || depMs < best.departureMs){
+                best = { routeShortName, mins, departureMs: depMs };
+              }
+            }
+            return best;
+          }
+
+          const a = soonest(data.a);
+          const b = soonest(data.b);
+          const c = soonest(data.c);
+
+          const perStop = [
+            { id: stops[0].id, label: stops[0].label, format: stops[0].format, ...(a || { routeShortName:"?", mins:"—", departureMs: 0 }) },
+            { id: stops[1].id, label: stops[1].label, format: stops[1].format, ...(b || { routeShortName:"?", mins:"—", departureMs: 0 }) },
+            { id: stops[2].id, label: stops[2].label, format: stops[2].format, ...(c || { routeShortName:"?", mins:"—", departureMs: 0 }) },
+          ];
+
+          state.hsl = { perStop, fetchedAtMs: Date.now() };
+          state.hslStatus = "ok";
+          state.hslLastSuccessMs = Date.now();
+          state.hslBackoffMs = CONFIG.BACKOFF.START_MS;
+          state.hslNextTryMs = 0;
+
+          cache.saveHsl();
+          render.hsl();
+
+        }catch(err){
+          state.hslStatus = "down";
+          state.hslBackoffMs = utils.nextBackoff(state.hslBackoffMs);
+          state.hslNextTryMs = Date.now() + state.hslBackoffMs;
+
+          render.hsl();
+
+        }finally{
+          render.statusBar();
+        }
+      }
+    };
+
+    /***********************************************************************
+     * RENDER (page render functions)
+     * - Keep DOM writes minimal and only when changes are detected.
+     ***********************************************************************/
+    const render = {
+      statusBar(){
+        const netDot = utils.el("netDot");
+        const netText = utils.el("netText");
+        const wxDot  = utils.el("wxDot");
+        const wxText = utils.el("wxText");
+        const hslDot = utils.el("hslDot");
+        const hslText= utils.el("hslText");
+        const paused = utils.el("pausedIndicator");
+
+        // Build a "render key" to avoid rewriting if nothing changed
+        const key = [
+          state.online,
+          state.weatherStatus, state.weatherLastSuccessMs, state.weather?.fetchedAtMs || 0,
+          state.hslStatus, state.hslLastSuccessMs, state.hsl?.fetchedAtMs || 0,
+          state.pausedUntilMs > Date.now()
+        ].join("|");
+
+        if (state.lastRenderKey.status === key) return;
+        state.lastRenderKey.status = key;
+
+        // Network
+        utils.setText(netText, `Network: ${state.online ? "Online" : "Offline"}`);
+        netDot.className = "dot " + (state.online ? "good" : "bad");
+
+        // Weather
+        const wxAge = state.weather?.fetchedAtMs ? utils.ageLabel(state.weather.fetchedAtMs) : "—";
+        const wxLast = state.weatherLastSuccessMs ? utils.fmtTime(new Date(state.weatherLastSuccessMs), { hour:"2-digit", minute:"2-digit" }) : "—";
+        const wxUp = (state.weatherStatus === "ok");
+        const wxDown = (state.weatherStatus === "down");
+        wxDot.className = "dot " + (wxUp ? "good" : (wxDown ? "bad" : "warn"));
+        utils.setText(wxText, `Weather: ${wxUp ? "UP" : (wxDown ? "DOWN" : "…")} · ${wxAge} · last ok ${wxLast}`);
+
+        // HSL
+        const hslAge = state.hsl?.fetchedAtMs ? utils.ageLabel(state.hsl.fetchedAtMs) : "—";
+        const hslLast = state.hslLastSuccessMs ? utils.fmtTime(new Date(state.hslLastSuccessMs), { hour:"2-digit", minute:"2-digit" }) : "—";
+        const hslUp = (state.hslStatus === "ok");
+        const hslDown = (state.hslStatus === "down");
+        hslDot.className = "dot " + (hslUp ? "good" : (hslDown ? "bad" : "warn"));
+        utils.setText(hslText, `HSL: ${hslUp ? "UP" : (hslDown ? "DOWN" : "…")} · ${hslAge} · last ok ${hslLast}`);
+
+        // Paused indicator
+        const isPaused = state.pausedUntilMs > Date.now();
+        paused.classList.toggle("on", isPaused);
+      },
+
+      clock(){
+        const { day, date, time } = utils.formatHeadingNow();
+        // Requirement: Date, Day and Time on top as heading; time bold and heading as well.
+        const clockEl = utils.el("clockText");
+        const html = `<span>${day}, ${date}</span> · <b style="font-size:16px; letter-spacing:.2px;">${time}</b>`;
+        utils.setHTML(clockEl, html);
+      },
+
+      weather(){
+        const sub = utils.el("wxSub");
+        const body = utils.el("wxBody");
+
+        // Determine stale (no success in a while) — we use age of fetchedAtMs
+        const has = !!state.weather;
+        const ageMs = has ? (Date.now() - (state.weather.fetchedAtMs || 0)) : Infinity;
+        const stale = has && ageMs > (CONFIG.DATA_REFRESH.WEATHER_MS * 1.5);
+
+        const statusLine = has
+          ? `${CONFIG.LOCATION.name} · ${utils.ageLabel(state.weather.fetchedAtMs)}${stale ? " · stale" : ""}`
+          : `No data yet`;
+
+        utils.setText(sub, statusLine);
+
+        // Build render key
+        const key = JSON.stringify({
+          has,
+          stale,
+          st: state.weatherStatus,
+          t: has ? state.weather.temperature_2m : null,
+          f: has ? state.weather.apparent_temperature : null,
+          c: has ? state.weather.weather_code : null,
+          d: has ? state.weather.is_day : null
+        });
+        if (state.lastRenderKey.weather === key) return;
+        state.lastRenderKey.weather = key;
+
+        // Friendly placeholders when no cache exists
+        if (!has){
+          const errMsg = (state.weatherStatus === "down")
+            ? `<div class="badge err">Weather API down · retrying</div>`
+            : `<div class="badge">Loading…</div>`;
+
+          utils.setHTML(body, `
+            <div class="center-msg">
+              <div>
+                <b>Weather unavailable</b><br>
+                <span class="muted">No cached data yet. ${state.online ? "Trying again soon." : "You're offline."}</span>
+                <div style="margin-top:12px;">${errMsg}</div>
+              </div>
+            </div>
+          `);
+          return;
+        }
+
+        // Simplified condition + icon
+        const cond = theme.weatherCodeToCondition(state.weather.weather_code);
+        const icon = theme.conditionIcon(cond, state.weather.is_day);
+
+        const temp = (typeof state.weather.temperature_2m === "number")
+          ? `${Math.round(state.weather.temperature_2m)}°`
+          : "—";
+        const feels = (typeof state.weather.apparent_temperature === "number")
+          ? `${Math.round(state.weather.apparent_temperature)}°`
+          : "—";
+
+        const badges = [];
+        if (stale) badges.push(`<span class="badge stale">STALE</span>`);
+        if (state.weatherStatus === "down") badges.push(`<span class="badge err">API DOWN · retrying</span>`);
+        badges.push(`<span class="badge">Condition: ${cond.replace("_"," ")}</span>`);
+
+        utils.setHTML(body, `
+          <div class="weather-wrap">
+            <div class="wx-left">
+              <div class="wx-temp">
+                <div class="big">${temp}</div>
+                <div class="wx-feels">Feels like <b>${feels}</b></div>
+              </div>
+
+              <div class="wx-cond">
+                <span style="color:var(--accent);">●</span>
+                <span>${cond.replace("_"," ")}</span>
+              </div>
+
+              <div class="wx-badges">${badges.join("")}</div>
+
+              <div class="muted" style="margin-top:6px; font-weight:700;">
+                Theme adapts to time + weather (always readable).
+              </div>
+            </div>
+
+            <div class="wx-icon" aria-hidden="true">
+              <div class="glyph">${icon}</div>
+            </div>
+          </div>
+        `);
+      },
+
+      hsl(){
+        const sub = utils.el("hslSub");
+        const body = utils.el("hslBody");
+
+        const has = !!state.hsl && Array.isArray(state.hsl.perStop);
+        const ageMs = has ? (Date.now() - (state.hsl.fetchedAtMs || 0)) : Infinity;
+        const stale = has && ageMs > (CONFIG.DATA_REFRESH.HSL_MS * 2.5);
+
+        const statusLine = has
+          ? `Updated ${utils.ageLabel(state.hsl.fetchedAtMs)}${stale ? " · stale" : ""}`
+          : `No data yet`;
+
+        utils.setText(sub, statusLine);
+
+        // Build render key
+        const key = JSON.stringify({
+          has, stale, st: state.hslStatus,
+          perStop: has ? state.hsl.perStop.map(x => [x.label, x.routeShortName, x.mins]) : null
+        });
+        if (state.lastRenderKey.hsl === key) return;
+        state.lastRenderKey.hsl = key;
+
+        if (!has){
+          const errMsg = (state.hslStatus === "down")
+            ? `<div class="badge err">HSL API down · retrying</div>`
+            : `<div class="badge">Loading…</div>`;
+
+          utils.setHTML(body, `
+            <div class="center-msg">
+              <div>
+                <b>HSL unavailable</b><br>
+                <span class="muted">No cached data yet. ${state.online ? "Trying again soon." : "You're offline."}</span>
+                <div style="margin-top:12px;">${errMsg}</div>
+              </div>
+            </div>
+          `);
+          return;
+        }
+
+        // Render 1 row per stop using format string from CONFIG
+        const rows = state.hsl.perStop.map((s) => {
+          const msg = utils.formatTemplate(s.format, {
+            routeShortName: s.routeShortName ?? "?",
+            mins: (typeof s.mins === "number" ? s.mins : "—")
+          });
+
+          const depTime = (s.departureMs && typeof s.departureMs === "number")
+            ? utils.fmtTime(new Date(s.departureMs), { hour:"2-digit", minute:"2-digit" })
+            : "—";
+
+          return `
+            <div class="hsl-row">
+              <div class="hsl-left">
+                <div class="hsl-stop">${s.label}</div>
+                <div class="hsl-msg">${msg}</div>
+              </div>
+              <div class="hsl-right">
+                <div><b>${depTime}</b></div>
+                <div class="muted">${stale ? "stale" : "live"}${state.hslStatus==="down" ? " · api down" : ""}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        const topBadges = `
+          <div class="wx-badges" style="margin-bottom:12px;">
+            ${stale ? `<span class="badge stale">STALE</span>` : ``}
+            ${state.hslStatus === "down" ? `<span class="badge err">API DOWN · retrying</span>` : ``}
+            <span class="badge">1 row per stop</span>
+          </div>
+        `;
+
+        utils.setHTML(body, `
+          ${topBadges}
+          <div class="hsl-list">${rows}</div>
+        `);
+      }
+    };
+
+    /***********************************************************************
+     * THEME (CSS variables + overlays)
+     * - Apply time-of-day immediately on boot
+     * - Refine after weather loads
+     * - Ensure contrast: keep text light on dark backgrounds
+     ***********************************************************************/
+    const theme = {
+      // Map Open-Meteo weather codes into simplified conditions
+      // clear, partly_cloudy, cloudy, fog, rain, snow, thunder
+      weatherCodeToCondition(code){
+        const c = Number(code);
+
+        // Defensive fallback
+        if (!Number.isFinite(c)) return "cloudy";
+
+        // Open-Meteo weather code groups (approx)
+        // 0 clear
+        // 1-3 mainly clear/partly cloudy/overcast
+        // 45-48 fog
+        // 51-67 drizzle/rain
+        // 71-77 snow
+        // 80-82 rain showers
+        // 85-86 snow showers
+        // 95 thunderstorm
+        // 96-99 thunderstorm with hail
+        if (c === 0) return "clear";
+        if (c >= 1 && c <= 2) return "partly_cloudy";
+        if (c === 3) return "cloudy";
+        if (c === 45 || c === 48) return "fog";
+        if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) return "rain";
+        if ((c >= 71 && c <= 77) || (c >= 85 && c <= 86)) return "snow";
+        if (c >= 95 && c <= 99) return "thunder";
+        return "cloudy";
+      },
+
+      // Icon for simplified condition + day/night
+      conditionIcon(cond, isDay){
+        const day = (Number(isDay) === 1);
+        switch(cond){
+          case "clear": return day ? "☀️" : "🌙";
+          case "partly_cloudy": return day ? "🌤️" : "☁️";
+          case "cloudy": return "☁️";
+          case "fog": return "🌫️";
+          case "rain": return "🌧️";
+          case "snow": return "❄️";
+          case "thunder": return "⛈️";
+          default: return "☁️";
+        }
+      },
+
+      // Apply time-of-day base theme
+      applyBaseByTime(){
+        const now = new Date();
+        let hour = 0;
+        try{
+          // Convert to configured timezone hour
+          const parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: CONFIG.TIMEZONE,
+            hour: "2-digit",
+            hour12: false
+          }).formatToParts(now);
+          const h = parts.find(p => p.type === "hour")?.value;
+          hour = Number(h ?? 0);
+        }catch{
+          hour = now.getHours();
+        }
+
+        // Day segments
+        // Night: 22-5, Morning: 6-10, Day: 11-16, Evening: 17-21
+        let bg = "#070A12";
+        let accent = "#38BDF8";
+        let accent2 = "#A78BFA";
+
+        if (hour >= 6 && hour <= 10){
+          bg = "#071225";
+          accent = "#22C55E";
+          accent2 = "#38BDF8";
+        } else if (hour >= 11 && hour <= 16){
+          bg = "#060B18";
+          accent = "#38BDF8";
+          accent2 = "#22C55E";
+        } else if (hour >= 17 && hour <= 21){
+          bg = "#0A0816";
+          accent = "#A78BFA";
+          accent2 = "#38BDF8";
+        } else {
+          bg = "#070A12";
+          accent = "#38BDF8";
+          accent2 = "#A78BFA";
+        }
+
+        document.documentElement.style.setProperty("--bg", bg);
+        document.documentElement.style.setProperty("--accent", accent);
+        document.documentElement.style.setProperty("--accent2", accent2);
+      },
+
+      // Apply condition overlay (lightweight)
+      setConditionOverlay(cond){
+        const el = utils.el("condOverlay");
+        if (!el) return;
+
+        // Clear previous overlay classnames
+        el.className = "cond-overlay";
+
+        // Only show for non-clear to keep CPU low
+        if (cond === "clear"){
+          // no overlay
+          return;
+        }
+
+        // Pick overlay type
+        let cls = "cond-clouds";
+        if (cond === "rain" || cond === "thunder") cls = "cond-rain";
+        else if (cond === "snow") cls = "cond-snow";
+        else if (cond === "cloudy" || cond === "partly_cloudy" || cond === "fog") cls = "cond-clouds";
+
+        el.classList.add("on", cls);
+      },
+
+      // Refine theme based on weather (but always keep dark background & light text)
+      applyWeatherRefine(){
+        // If weather failed, don't force anything; base time theme is enough.
+        if (!state.weather) return;
+
+        const cond = theme.weatherCodeToCondition(state.weather.weather_code);
+        const isDay = (Number(state.weather.is_day) === 1);
+
+        // Simple palette nudges by condition
+        // (Stay dark for TV contrast)
+        let bg = isDay ? "#070B15" : "#05060E";
+        let accent = isDay ? "#38BDF8" : "#A78BFA";
+        let accent2 = isDay ? "#22C55E" : "#38BDF8";
+
+        if (cond === "clear"){
+          bg = isDay ? "#060B18" : "#05060E";
+          accent = isDay ? "#38BDF8" : "#A78BFA";
+          accent2 = isDay ? "#FACC15" : "#38BDF8";
+        } else if (cond === "partly_cloudy" || cond === "cloudy" || cond === "fog"){
+          bg = isDay ? "#070A14" : "#05060E";
+          accent = "#38BDF8";
+          accent2 = "#A78BFA";
+        } else if (cond === "rain"){
+          bg = "#050914";
+          accent = "#38BDF8";
+          accent2 = "#22C55E";
+        } else if (cond === "snow"){
+          bg = "#050812";
+          accent = "#A78BFA";
+          accent2 = "#38BDF8";
+        } else if (cond === "thunder"){
+          bg = "#05060E";
+          accent = "#EF4444";
+          accent2 = "#A78BFA";
+        }
+
+        document.documentElement.style.setProperty("--bg", bg);
+        document.documentElement.style.setProperty("--accent", accent);
+        document.documentElement.style.setProperty("--accent2", accent2);
+
+        theme.setConditionOverlay(cond);
+      },
+
+      // Public apply: base first, then refine if we have weather
+      apply(){
+        theme.applyBaseByTime();
+        theme.applyWeatherRefine();
+      }
+    };
+
+    /***********************************************************************
+     * ROUTER (page switching + manual nav)
+     * - Smooth fade transitions already in CSS
+     * - Manual nav: left/right keyboard
+     * - Pause rotation for 60s on manual nav, then resume
+     ***********************************************************************/
+    const router = {
+      init(){
+        state.pageCount = 4;
+        router.buildDots();
+        router.show(0, false);
+
+        // One-time keyboard listener (avoid memory leaks)
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowRight") router.next(true);
+          if (e.key === "ArrowLeft") router.prev(true);
+        }, { passive:true });
+      },
+
+      buildDots(){
+        const dots = utils.el("pageDots");
+        if (!dots) return;
+
+        const html = Array.from({length: state.pageCount}).map((_, i) =>
+          `<div class="page-dot" data-i="${i}" aria-label="Go to page ${i+1}"></div>`
+        ).join("");
+        utils.setHTML(dots, html);
+
+        // Single delegated click handler (one listener total)
+        dots.addEventListener("click", (e) => {
+          const t = e.target;
+          if (!(t instanceof Element)) return;
+          const i = t.getAttribute("data-i");
+          if (i != null){
+            router.show(Number(i), true);
+          }
+        }, { passive:true });
+      },
+
+      updateDots(){
+        const dots = utils.qsa(".page-dot", utils.el("pageDots"));
+        dots.forEach((d, i) => d.classList.toggle("active", i === state.pageIndex));
+      },
+
+      show(i, manual=false){
+        const idx = (i + state.pageCount) % state.pageCount;
+        state.pageIndex = idx;
+
+        for (let p = 0; p < state.pageCount; p++){
+          const el = utils.el("page" + p);
+          if (el) el.classList.toggle("active", p === idx);
+        }
+        router.updateDots();
+
+        // Pause rotation on manual navigation for 60 seconds
+        if (manual){
+          state.pausedUntilMs = Date.now() + 60 * 1000;
+          render.statusBar();
+        }
+      },
+
+      next(manual=false){ router.show(state.pageIndex + 1, manual); },
+      prev(manual=false){ router.show(state.pageIndex - 1, manual); }
+    };
+
+    /***********************************************************************
+     * HEALTH (network + API up/down logic)
+     ***********************************************************************/
+    const health = {
+      init(){
+        // Online/offline events (one-time)
+        window.addEventListener("online", () => {
+          state.online = true;
+          render.statusBar();
+          // When back online, try sooner (but still keep backoff logic safe)
+          state.weatherNextTryMs = 0;
+          state.hslNextTryMs = 0;
+        });
+        window.addEventListener("offline", () => {
+          state.online = false;
+          render.statusBar();
+        });
+      }
+    };
+
+    /***********************************************************************
+     * SCHEDULER (intervals + refresh)
+     * - One set of intervals only (memory leak avoidance)
+     * - Must keep rotating pages even if all APIs fail
+     ***********************************************************************/
+    const scheduler = {
+      start(){
+        scheduler.stop(); // defensive: ensure no duplicates
+
+        // Clock tick (every second, tiny)
+        state.timers.clock = setInterval(() => {
+          render.clock();
+          // theme base can drift with time; update softly every minute via this check
+          const s = new Date().getSeconds();
+          if (s === 0) theme.apply(); // once per minute
+        }, 1000);
+
+        // Page rotation
+        state.timers.rotation = setInterval(() => {
+          // Always keep rotating; if paused, do nothing until pause expires
+          if (Date.now() < state.pausedUntilMs) return;
+          router.next(false);
+        }, CONFIG.ROTATION_MS);
+
+        // Weather refresh interval
+        state.timers.weather = setInterval(() => {
+          // If backoff says wait longer, don't force
+          if (state.weatherNextTryMs && Date.now() < state.weatherNextTryMs) return;
+          api.fetchWeather();
+        }, CONFIG.DATA_REFRESH.WEATHER_MS);
+
+        // HSL refresh interval
+        state.timers.hsl = setInterval(() => {
+          if (state.hslNextTryMs && Date.now() < state.hslNextTryMs) return;
+          api.fetchHsl();
+        }, CONFIG.DATA_REFRESH.HSL_MS);
+
+        // Retry tick for backoff (small heartbeat)
+        state.timers.retryTick = setInterval(() => {
+          const now = Date.now();
+
+          // Auto-resume rotation indicator (purely visual)
+          render.statusBar();
+
+          // If API is down and nextTry has arrived, try again
+          if (state.online){
+            if (state.weatherStatus === "down" && state.weatherNextTryMs && now >= state.weatherNextTryMs){
+              state.weatherNextTryMs = 0;
+              api.fetchWeather();
+            }
+            if (state.hslStatus === "down" && state.hslNextTryMs && now >= state.hslNextTryMs){
+              state.hslNextTryMs = 0;
+              api.fetchHsl();
+            }
+          }
+        }, 1000);
+      },
+
+      stop(){
+        // Clear all timers if present
+        for (const k of Object.keys(state.timers)){
+          if (state.timers[k]){
+            clearInterval(state.timers[k]);
+            state.timers[k] = null;
           }
         }
       }
-    `;
-
-    for(const stop of CONFIG.transit.stops){
-      const box = document.getElementById(stop.target);
-      if(!box) continue;
-
-      box.innerHTML = `<span class="small muted">Loading…</span>`;
-
-      const data = await gql(query, {
-        id: stop.id,
-        n: CONFIG.transit.departuresPerStop
-      });
-
-      const times = data?.stop?.stoptimesWithoutPatterns || [];
-      // Populate summary boxes with top departure
-const summaryMap = {
-  "kavallinmakiTimes": "summary1",
-  "viherlaaksontoriTimes": "summary2",
-  "leppavaaraHkiTimes": "summary3"
-};
-
-const summaryId = summaryMap[stop.target];
-if(summaryId){
-  const el = document.getElementById(summaryId);
-  if(el){
-    if(times.length){
-      const st = times[0];
-      const route = st.trip?.route?.shortName || "—";
-      const mins = Math.max(0, minutesUntil(depTimeObj(st)));
-      el.innerHTML = `
-  <span class="bus">${route}</span> leaves in
-  <span class="mins">${mins} min</span>
-`;
-    }else{
-      el.innerHTML = `<span class="small muted">No departures</span>`;
-    }
-  }
-}
-      box.innerHTML = times.length
-        ? times.map(formatDepartureChip).join("")
-        : `<span class="small muted">No departures</span>`;
-    }
-
-    safeText($("#hslState"), "OK");
-    setPillState("hslPill", "ok");
-    safeText($("#hslUpdated"), `Updated: ${fmtTimeHHMM(new Date())}`);
-
-  }catch(e){
-    safeText($("#hslState"), "Error");
-    setPillState("hslPill", "err");
-    console.error(e);
-    CONFIG.transit.stops.forEach(s=>{
-      const el = document.getElementById(s.target);
-      if(el) el.innerHTML = `<span class="small muted">Unavailable</span>`;
-    });
-  }
-}
-
-
-function escapeHTML(s){
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-/* =========================================================
-   GOOGLE CALENDAR EMBED (Week agenda)
-   - Uses mode=AGENDA etc.
-   - We set src once to avoid refresh/reload loops.
-========================================================= */
-function initCalendar(){
-  const base = new URL(CONFIG.calendar.baseEmbedUrl);
-  const params = CONFIG.calendar.params || {};
-  Object.entries(params).forEach(([k,v]) => base.searchParams.set(k, v));
-  base.searchParams.set("t", String(Date.now()));
-  $("#gcalFrame").src = base.toString();
-}
-
-
-/* =========================================================
-   WEATHER ANIMATION CANVAS (rain/snow/clouds/sun/moon)
-========================================================= */
-const wxCanvas = $("#wxCanvas");
-const wxCtx = wxCanvas.getContext("2d");
-let wxEffect = "none";
-let wxNight = false;
-let particles = [];
-let animRAF = null;
-
-function resizeWxCanvas(){
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  wxCanvas.width = Math.floor(window.innerWidth * dpr);
-  wxCanvas.height = Math.floor(window.innerHeight * dpr);
-  wxCtx.setTransform(dpr,0,0,dpr,0,0);
-}
-window.addEventListener("resize", ()=>{
-  resizeWxCanvas();
-});
-resizeWxCanvas();
-
-function setWxEffect(kind, night){
-  wxEffect = kind || "none";
-  wxNight = !!night;
-  particles = [];
-
-  // seed particles
-  const count = (wxEffect === "rain" || wxEffect === "storm") ? 220 :
-                (wxEffect === "snow") ? 160 :
-                (wxEffect === "cloud") ? 40 : 0;
-
-  for(let i=0;i<count;i++){
-    particles.push(spawnParticle());
-  }
-
-  if(!animRAF) animateWx();
-}
-
-function spawnParticle(){
-  const W = window.innerWidth, H = window.innerHeight;
-  if(wxEffect === "rain" || wxEffect === "storm"){
-    return {
-      x: Math.random()*W,
-      y: Math.random()*H,
-      vx: -2 - Math.random()*2,
-      vy: 10 + Math.random()*10,
-      len: 10 + Math.random()*14,
-      w: 1 + Math.random()*1.2
     };
-  }
-  if(wxEffect === "snow"){
-    return {
-      x: Math.random()*W,
-      y: Math.random()*H,
-      vx: -1 + Math.random()*2,
-      vy: 1 + Math.random()*2.5,
-      r: 1 + Math.random()*2.2,
-      wob: Math.random()*Math.PI*2
-    };
-  }
-  if(wxEffect === "cloud"){
-    return {
-      x: Math.random()*W,
-      y: Math.random()*H*0.35,
-      vx: .25 + Math.random()*.6,
-      s: 40 + Math.random()*90,
-      a: .05 + Math.random()*.07
-    };
-  }
-  return { x:0, y:0 };
-}
 
-function animateWx(){
-  animRAF = requestAnimationFrame(animateWx);
-  const W = window.innerWidth, H = window.innerHeight;
-  wxCtx.clearRect(0,0,W,H);
+    /***********************************************************************
+     * IFRAME SETUP (no constant refreshing!)
+     * - Set src once on boot.
+     * - Optionally disable pointer events to reduce accidental focus/CPU
+     ***********************************************************************/
+    const iframes = {
+      init(){
+        // Apply pointer-events policy
+        if (!CONFIG.IFRAME.allowPointerEvents){
+          // Globally disable pointer events on iframes to prevent interactions
+          // (This helps TV kiosk-style dashboards.)
+          const style = document.createElement("style");
+          style.textContent = `iframe{ pointer-events:none; }`;
+          document.head.appendChild(style);
+        }
 
-  // sun/moon glow
-  if(wxEffect === "sun" && !wxNight){
-    drawGlow(90, 90, 120, "rgba(250,204,21,.22)");
-    drawGlow(120, 120, 220, "rgba(56,189,248,.08)");
-  }
-  if(wxNight){
-    drawGlow(W-120, 110, 160, "rgba(167,139,250,.14)");
-    drawGlow(W-140, 130, 260, "rgba(56,189,248,.06)");
-  }
+        // Electricity
+        const elecHome = utils.el("iframeElecHome");
+        const elecLink = utils.el("elecLink");
+        if (elecHome) elecHome.src = CONFIG.ELECTRICITY.homeUrl;
+        if (elecLink) elecLink.href = CONFIG.ELECTRICITY.homeUrl;
 
-  if(wxEffect === "rain" || wxEffect === "storm"){
-    wxCtx.strokeStyle = (wxEffect === "storm") ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.28)";
-    wxCtx.lineCap = "round";
-    for(const p of particles){
-      wxCtx.lineWidth = p.w;
-      wxCtx.beginPath();
-      wxCtx.moveTo(p.x, p.y);
-      wxCtx.lineTo(p.x + p.vx, p.y + p.len);
-      wxCtx.stroke();
+        const elecToday = utils.el("iframeElecToday");
+        const elecTomorrow = utils.el("iframeElecTomorrow");
+        if (elecToday) elecToday.src = CONFIG.ELECTRICITY.embedToday;
+        if (elecTomorrow) elecTomorrow.src = CONFIG.ELECTRICITY.embedTomorrow;
 
-      p.x += p.vx;
-      p.y += p.vy;
-      if(p.y > H + 40 || p.x < -60) {
-        p.x = Math.random()*W + 60;
-        p.y = -Math.random()*200;
+        // Calendar
+        const cal = utils.el("iframeCal");
+        if (cal) cal.src = CONFIG.CALENDAR.embedUrl;
+
+        // HSL detailed pages
+        const s1 = utils.el("iframeStop1");
+        const s2 = utils.el("iframeStop2");
+        const s3 = utils.el("iframeStop3");
+        if (s1) s1.src = "https://reittiopas.hsl.fi/pysakit/HSL%3A2151204";
+        if (s2) s2.src = "https://reittiopas.hsl.fi/pysakit/HSL%3A2151208";
+        if (s3) s3.src = "https://reittiopas.hsl.fi/pysakit/HSL%3A2111552";
       }
-    }
-    // occasional lightning flash for storm
-    if(wxEffect === "storm" && Math.random() < 0.006){
-      wxCtx.fillStyle = "rgba(255,255,255,.15)";
-      wxCtx.fillRect(0,0,W,H);
-    }
-  }
+    };
 
-  if(wxEffect === "snow"){
-    wxCtx.fillStyle = "rgba(255,255,255,.65)";
-    for(const p of particles){
-      p.wob += 0.03;
-      const wobX = Math.sin(p.wob) * 0.7;
-      wxCtx.beginPath();
-      wxCtx.arc(p.x + wobX, p.y, p.r, 0, Math.PI*2);
-      wxCtx.fill();
+    /***********************************************************************
+     * BOOT (cache first, render, then fetch)
+     ***********************************************************************/
+    (function boot(){
+      // 1) Load cache immediately (critical for 24/7 stability)
+      cache.load();
 
-      p.x += p.vx * 0.4;
-      p.y += p.vy * 1.1;
-      if(p.y > H + 10){
-        p.y = -10;
-        p.x = Math.random()*W;
-      }
-      if(p.x < -10) p.x = W+10;
-      if(p.x > W+10) p.x = -10;
-    }
-  }
+      // 2) Apply time-of-day theme immediately (even if offline)
+      theme.apply();
 
-  if(wxEffect === "cloud"){
-    for(const p of particles){
-      p.x += p.vx;
-      if(p.x > W + p.s) p.x = -p.s;
-      drawCloud(p.x, p.y, p.s, p.a);
-    }
-  }
-}
+      // 3) Init health + router + iframes (no repeated listeners)
+      health.init();
+      router.init();
+      iframes.init();
 
-function drawGlow(x,y,r,color){
-  const g = wxCtx.createRadialGradient(x,y,0,x,y,r);
-  g.addColorStop(0, color);
-  g.addColorStop(1, "rgba(0,0,0,0)");
-  wxCtx.fillStyle = g;
-  wxCtx.beginPath();
-  wxCtx.arc(x,y,r,0,Math.PI*2);
-  wxCtx.fill();
-}
+      // 4) First render from cache/placeholder
+      render.clock();
+      render.weather();
+      render.hsl();
+      render.statusBar();
 
-function drawCloud(x,y,size,alpha){
-  wxCtx.save();
-  wxCtx.globalAlpha = alpha;
-  wxCtx.fillStyle = "rgba(255,255,255,.9)";
-  wxCtx.beginPath();
-  wxCtx.ellipse(x, y, size*0.62, size*0.22, 0, 0, Math.PI*2);
-  wxCtx.ellipse(x - size*0.25, y - size*0.12, size*0.24, size*0.18, 0, 0, Math.PI*2);
-  wxCtx.ellipse(x + size*0.18, y - size*0.10, size*0.28, size*0.20, 0, 0, Math.PI*2);
-  wxCtx.fill();
-  wxCtx.restore();
-}
+      // 5) Kick off initial fetches (non-blocking)
+      // Even if these fail, rotation continues and cached UI remains.
+      api.fetchWeather();
+      api.fetchHsl();
 
-/* =========================================================
-   BOOTSTRAP + REFRESH LOOPS
-========================================================= */
-function startLoops(){
-  // Weather refresh every 10 minutes
-  loadWeather();
-  setInterval(loadWeather, 10 * 60_000);
-
-  // Transit refresh
-  loadHSL();
-  if(hslTimer) clearInterval(hslTimer);
-  hslTimer = setInterval(loadHSL, CONFIG.transit.refreshMs);
-}
-
-(function init(){
-  networkBadge();
-  initCalendar();
-  applyTimeOnlyTheme();
-  setWxEffect("none", isNightNow(null));
-  startLoops();
-
-  // Power init ONLY ONCE
-  initPowerStatus();
-})();
-</script>
-
-<!--
-Notes / Sources:
-- Open-Meteo Weather API docs: https://open-meteo.com/en/docs
-- Digitransit (HSL) GraphQL + stops/departures: https://digitransit.fi/en/developers/apis/1-routing-api/stops/
-- Google Calendar embed supports mode=AGENDA for schedule-style view.
-- Fingrid Open Data API requires an API key: https://data.fingrid.fi/en/instructions
--->
+      // 6) Start scheduler (single set of intervals)
+      scheduler.start();
+    })();
+  </script>
 </body>
 </html>
