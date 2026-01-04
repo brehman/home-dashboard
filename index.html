@@ -393,6 +393,40 @@
       border-radius: 16px;
       border:1px solid rgba(148,163,184,.14);
       background: rgba(2,6,23,.18);
+      align-items:stretch; /* allow left minutes to span both lines */
+    }
+    /* Page 1 HSL: huge minutes at row start (TV readable) */
+    .hsl-minsBig{
+      flex:0 0 auto;
+      min-width: 90px;
+      padding: 8px 12px;
+      margin-right: 6px;
+      border-radius: 14px;
+      border:1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.40);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .hsl-minsBig .num{
+      font-size: 48px;        /* huge number */
+      line-height: .95;
+      font-weight: 950;
+      letter-spacing: -1px;
+      color: var(--fg);
+    }
+    .hsl-minsBig .unit{
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    /* Emphasize very-soon departures */
+    .hsl-row.soon{
+      border-color: rgba(34,197,94,.35);
+    }
+    .hsl-row.soon .hsl-minsBig{
+      border-color: rgba(34,197,94,.55);
     }
     .hsl-left{
       display:flex;
@@ -1406,18 +1440,33 @@ state.hsl = {
             ? utils.fmtTime(new Date(s.departureMs), { hour:"2-digit", minute:"2-digit" })
             : "—";
 
+          const minsNum = (typeof s.mins === "number") ? s.mins : null;
+          const soon = (typeof minsNum === "number" && minsNum <= 3);
+
           return `
-            <div class="hsl-row">
-              <div class="hsl-left">
-                <div class="hsl-stop">${s.label}</div>
-                <div class="hsl-msg">${msg}</div>
-              </div>
-              <div class="hsl-right">
-                <div><b>${depTime}</b></div>
-                <div class="muted">${stale ? "stale" : "live"}${state.hslStatus==="down" ? " · api down" : ""}</div>
-              </div>
-            </div>
-          `;
+  <div class="hsl-row ${soon ? "soon" : ""}">
+
+    <!-- Huge minutes block -->
+    <div class="hsl-minsBig" aria-label="Minutes until departure">
+      <div style="display:flex; align-items:baseline;">
+        <div class="num">${minsNum ?? "—"}</div>
+        <div class="unit">min</div>
+      </div>
+    </div>
+
+    <!-- Stop + message -->
+    <div class="hsl-left">
+      <div class="hsl-stop">${s.label}</div>
+      <div class="hsl-msg">${msg}</div>
+    </div>
+
+    <!-- Right meta -->
+    <div class="hsl-right">
+      <div><b>${depTime}</b></div>
+      <div class="muted">${stale ? "stale" : "live"}${state.hslStatus === "down" ? " · api down" : ""}</div>
+    </div>
+  </div>
+`;
         }).join("");
 
         const topBadges = `
