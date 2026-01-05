@@ -378,6 +378,160 @@
       100%{ transform: translateY(-2px); }
     }
 
+    /* Weather (Page 1) — Today's highlights layout */
+.wx-highlights{
+  height:100%;
+  display:grid;
+  grid-template-rows: 1.05fr .95fr;
+  gap: 14px;
+}
+
+.wx-top{
+  border-radius: 18px;
+  border:1px solid rgba(148,163,184,.14);
+  background: rgba(2,6,23,.18);
+  padding: 16px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+  overflow:hidden;
+}
+
+.wx-top .tBlock{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wx-now{
+  display:flex;
+  align-items:baseline;
+  gap: 14px;
+  flex-wrap:wrap;
+}
+
+.wx-now .temp{
+  font-size: 74px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+
+.wx-now .feels{
+  font-size: 22px;
+  font-weight: 850;
+  color: var(--muted);
+}
+
+.wx-condline{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-size:20px;
+  font-weight: 900;
+  letter-spacing:.2px;
+  min-width: 0;
+}
+
+.wx-miniGrid{
+  min-height:0;
+  display:grid;
+  grid-template-columns: 1fr 1fr 1.35fr;
+  gap: 14px;
+}
+
+.wx-mini{
+  border-radius: 18px;
+  border:1px solid rgba(148,163,184,.14);
+  background: rgba(2,6,23,.18);
+  padding: 14px 14px;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  overflow:hidden;
+}
+
+.wx-mini .k{
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .35px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.wx-mini .v{
+  font-size: 34px;
+  font-weight: 950;
+  letter-spacing: -0.5px;
+}
+
+.wx-mini .s{
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* Wind status */
+.windRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+.windIcon{
+  width:46px;
+  height:46px;
+  border-radius: 999px;
+  border:1px solid rgba(148,163,184,.16);
+  background: rgba(15,23,42,.40);
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+}
+.windArrow{
+  font-size: 18px;
+  line-height:1;
+  transform: rotate(0deg);
+}
+
+/* UV badge */
+.uvBadge{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border:1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.35);
+  font-weight: 900;
+}
+.uvBadge.good{ border-color: rgba(34,197,94,.45); }
+.uvBadge.warn{ border-color: rgba(250,204,21,.55); }
+.uvBadge.bad{  border-color: rgba(239,68,68,.55); }
+
+/* Daylight arc */
+.dayArcWrap{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+.dayArcMeta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  font-weight: 900;
+  color: var(--muted);
+}
+.dayArcMeta b{ color: var(--fg); }
+.dayArc{
+  width:100%;
+  height: 110px;
+}
+
     /* HSL list */
     .hsl-list{
       display:flex;
@@ -395,31 +549,48 @@
       background: rgba(2,6,23,.18);
       align-items:stretch; /* allow left minutes to span both lines */
     }
-    /* Page 1 HSL: huge minutes at row start (TV readable) */
+    /* Page 1 HSL: single-line huge "ROUTE in MINS" block */
     .hsl-minsBig{
       flex:0 0 auto;
-      min-width: 90px;
-      padding: 8px 12px;
-      margin-right: 6px;
-      border-radius: 14px;
+      min-width: 220px;          /* wider so everything fits */
+      padding: 10px 16px;
+      margin-right: 8px;
+      border-radius: 16px;
       border:1px solid rgba(148,163,184,.16);
       background: rgba(15,23,42,.40);
       display:flex;
-      align-items:center;
+      align-items:baseline;
       justify-content:center;
+      gap: 10px;
+      white-space: nowrap;       /* prevent wrapping */
     }
-    .hsl-minsBig .num{
-      font-size: 48px;        /* huge number */
-      line-height: .95;
+
+    .hsl-minsBig .route{
+      font-size: 44px;
+      line-height: 1;
       font-weight: 950;
       letter-spacing: -1px;
       color: var(--fg);
     }
-    .hsl-minsBig .unit{
-      font-size: 14px;
+
+    .hsl-minsBig .inWord{
+      font-size: 18px;
       font-weight: 900;
       color: var(--muted);
-      margin-left: 6px;
+    }
+
+    .hsl-minsBig .mins{
+      font-size: 44px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -1px;
+      color: var(--fg);
+    }
+
+    .hsl-minsBig .minsWord{
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--muted);
     }
     /* Emphasize very-soon departures */
     .hsl-row.soon{
@@ -446,7 +617,7 @@
     }
     .hsl-right{
       text-align:right;
-      min-width: 140px;
+      min-width: 120px;
       font-size: 14px;
       color: var(--muted);
       font-weight:700;
@@ -479,8 +650,8 @@
 
   /* TUNE THESE IF THE SITE LAYOUT CHANGES */
   --elecScale: 1.55;
-  --elecOffsetX: -180px;
-  --elecOffsetY: -130px;
+  --elecOffsetX: -250px;
+  --elecOffsetY: -13px;
 }
 
 .elec-crop iframe{
@@ -666,7 +837,7 @@
           <!-- Weather -->
           <div class="card" id="cardWeather">
             <div class="hdr">
-              <h2>Weather</h2>
+              <h2>Today's highlights</h2>
               <div class="sub" id="wxSub">Loading…</div>
             </div>
             <div class="body" id="wxBody">
@@ -1039,6 +1210,27 @@ ELECTRICITY: {
       },
 
       // Very small template formatter
+      // UV helpers
+uvLevel(u){
+  const v = Number(u);
+  if (!Number.isFinite(v)) return { label: "—", cls: "" };
+  if (v < 3) return { label: "Low", cls: "good" };
+  if (v < 6) return { label: "Moderate", cls: "warn" };
+  if (v < 8) return { label: "High", cls: "warn" };
+  if (v < 11) return { label: "Very high", cls: "bad" };
+  return { label: "Extreme", cls: "bad" };
+},
+
+// Compute daylight progress [0..1] between sunrise/sunset (expects ISO strings)
+daylightProgress(sunriseISO, sunsetISO){
+  if (!sunriseISO || !sunsetISO) return null;
+  const sr = new Date(sunriseISO).getTime();
+  const ss = new Date(sunsetISO).getTime();
+  if (!Number.isFinite(sr) || !Number.isFinite(ss) || ss <= sr) return null;
+  const now = Date.now();
+  const p = (now - sr) / (ss - sr);
+  return utils.clamp(p, 0, 1);
+},
       formatTemplate(tpl, vars){
         return tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ""));
       }
@@ -1108,7 +1300,11 @@ ELECTRICITY: {
         // Optional cache-busting: cb param
         const cb = Date.now();
         const tz = encodeURIComponent(CONFIG.WEATHER.timezoneParam);
-        return `${CONFIG.WEATHER.endpoint}?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,is_day&timezone=${tz}&cb=${cb}`;
+        return `${CONFIG.WEATHER.endpoint}?latitude=${lat}&longitude=${lon}`+
+       `&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_direction_10m`+
+       `&daily=sunrise,sunset,uv_index_max`+
+       `&forecast_days=1`+
+       `&timezone=${tz}&cb=${cb}`;
       },
 
       async fetchWeather(){
@@ -1120,13 +1316,24 @@ ELECTRICITY: {
           const cur = json && json.current ? json.current : null;
           if (!cur) throw new Error("Missing 'current' in response");
 
-          const data = {
-            temperature_2m: cur.temperature_2m,
-            apparent_temperature: cur.apparent_temperature,
-            weather_code: cur.weather_code,
-            is_day: cur.is_day,
-            fetchedAtMs: Date.now()
-          };
+          // Daily fields are arrays (today = index 0)
+const daily = json && json.daily ? json.daily : null;
+const sunrise = daily && Array.isArray(daily.sunrise) ? daily.sunrise[0] : null;
+const sunset  = daily && Array.isArray(daily.sunset)  ? daily.sunset[0]  : null;
+const uvMax   = daily && Array.isArray(daily.uv_index_max) ? daily.uv_index_max[0] : null;
+
+const data = {
+  temperature_2m: cur.temperature_2m,
+  apparent_temperature: cur.apparent_temperature,
+  weather_code: cur.weather_code,
+  is_day: cur.is_day,
+  wind_speed_10m: cur.wind_speed_10m,
+  wind_direction_10m: cur.wind_direction_10m,
+  sunriseISO: sunrise,
+  sunsetISO: sunset,
+  uv_index_max: uvMax,
+  fetchedAtMs: Date.now()
+};
 
           state.weather = data;
           state.weatherStatus = "ok";
@@ -1330,22 +1537,29 @@ state.hsl = {
           t: has ? state.weather.temperature_2m : null,
           f: has ? state.weather.apparent_temperature : null,
           c: has ? state.weather.weather_code : null,
-          d: has ? state.weather.is_day : null
+          d: has ? state.weather.is_day : null,
+          ws: has ? state.weather.wind_speed_10m : null,
+          wd: has ? state.weather.wind_direction_10m : null,
+          sr: has ? state.weather.sunriseISO : null,
+          ss: has ? state.weather.sunsetISO : null,
+          uv: has ? state.weather.uv_index_max : null
         });
         if (state.lastRenderKey.weather === key) return;
         state.lastRenderKey.weather = key;
 
         if (!has){
-          const errMsg = (state.weatherStatus === "down")
-            ? `<div class="badge err">Weather API down · retrying</div>`
-            : `<div class="badge">Loading…</div>`;
+          const msg = (state.weatherStatus === "down")
+            ? `Weather API down — ${state.online ? "retrying with backoff" : "offline"}.`
+            : `Loading weather…`;
 
           utils.setHTML(body, `
             <div class="center-msg">
               <div>
-                <b>Weather unavailable</b><br>
-                <span class="muted">No cached data yet. ${state.online ? "Trying again soon." : "You're offline."}</span>
-                <div style="margin-top:12px;">${errMsg}</div>
+                <b>${msg}</b><br>
+                <span class="muted">If offline, cached data will appear automatically.</span>
+                <div style="margin-top:12px;">
+                  ${state.weatherStatus === "down" ? `<span class="badge err">API DOWN · retrying</span>` : `<span class="badge">Loading…</span>`}
+                </div>
               </div>
             </div>
           `);
@@ -1367,26 +1581,107 @@ state.hsl = {
         if (state.weatherStatus === "down") badges.push(`<span class="badge err">API DOWN · retrying</span>`);
         badges.push(`<span class="badge">Condition: ${cond.replace("_"," ")}</span>`);
 
+        const wind = (typeof state.weather.wind_speed_10m === "number") ? Math.round(state.weather.wind_speed_10m) : null;
+        const windDir = (typeof state.weather.wind_direction_10m === "number") ? Math.round(state.weather.wind_direction_10m) : null;
+
+        const uv = (typeof state.weather.uv_index_max === "number") ? Math.round(state.weather.uv_index_max * 10) / 10 : null;
+        const uvInfo = utils.uvLevel(uv);
+
+        const sunrise = state.weather.sunriseISO ? new Date(state.weather.sunriseISO) : null;
+        const sunset  = state.weather.sunsetISO  ? new Date(state.weather.sunsetISO)  : null;
+
+        const srTxt = sunrise ? utils.fmtTime(sunrise, { hour:"2-digit", minute:"2-digit" }) : "—";
+        const ssTxt = sunset  ? utils.fmtTime(sunset,  { hour:"2-digit", minute:"2-digit" }) : "—";
+
+        const p = utils.daylightProgress(state.weather.sunriseISO, state.weather.sunsetISO);
+
+        // SVG arc geometry
+        const w = 320, h = 110;
+        const cx = w/2, cy = 105;
+        const r = 90;
+        const x1 = cx - r, y1 = cy;
+        const x2 = cx + r, y2 = cy;
+        const arcPath = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
+
+        let sunX = cx, sunY = cy - r;
+        if (typeof p === "number"){
+          const theta = Math.PI * (1 - p);
+          sunX = cx + r * Math.cos(theta);
+          sunY = cy - r * Math.sin(theta);
+        }
+
+        const windArrow = (windDir == null) ? "" : `style="transform: rotate(${windDir}deg);"`;
+
         utils.setHTML(body, `
-          <div class="weather-wrap">
-            <div class="wx-left">
-              <div class="wx-temp">
-                <div class="big">${temp}</div>
-                <div class="wx-feels">Feels like <b>${feels}</b></div>
+          <div class="wx-highlights">
+
+            <!-- 1) Temp + feels like (highlight box) -->
+            <div class="wx-top">
+              <div class="tBlock">
+                <div class="wx-now">
+                  <div class="temp">${temp}</div>
+                  <div class="feels">Feels like <b>${feels}</b></div>
+                </div>
+
+                <div class="wx-condline">
+                  <span style="color:var(--accent);">●</span>
+                  <span>${cond.replace("_"," ")}</span>
+                  <span class="muted" style="font-weight:900;">·</span>
+                  <span class="muted" style="font-weight:900;">${CONFIG.LOCATION.name}</span>
+                </div>
+
+                <div class="wx-badges">${badges.join("")}</div>
               </div>
 
-              <div class="wx-cond">
-                <span style="color:var(--accent);">●</span>
-                <span>${cond.replace("_"," ")}</span>
+              <div class="wx-icon" aria-hidden="true" style="min-height: 170px; width: 220px;">
+                <div class="glyph">${icon}</div>
               </div>
-
-              <div class="wx-badges">${badges.join("")}</div>
-
-
             </div>
 
-            <div class="wx-icon" aria-hidden="true">
-              <div class="glyph">${icon}</div>
+            <!-- 2) Wind  3) UV  4) Daylight arc -->
+            <div class="wx-miniGrid">
+
+              <div class="wx-mini">
+                <div class="k">Wind status</div>
+                <div class="windRow">
+                  <div>
+                    <div class="v">${wind == null ? "—" : wind}<span style="font-size:16px; font-weight:900; color:var(--muted);"> km/h</span></div>
+                    <div class="s">${windDir == null ? "Direction —" : `Direction ${windDir}°`}</div>
+                  </div>
+                  <div class="windIcon" aria-hidden="true">
+                    <div class="windArrow" ${windArrow}>➤</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wx-mini">
+                <div class="k">UV index today</div>
+                <div class="v">${uv == null ? "—" : uv}</div>
+                <div class="s">
+                  <span class="uvBadge ${uvInfo.cls}">
+                    <span style="color:var(--accent);">●</span>
+                    <span>${uvInfo.label}</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="wx-mini">
+                <div class="k">Daylight</div>
+                <div class="dayArcWrap">
+                  <svg class="dayArc" viewBox="0 0 ${w} ${h}" role="img" aria-label="Daylight arc">
+                    <path d="${arcPath}" stroke="rgba(248,250,252,.25)" stroke-width="10" fill="none" stroke-linecap="round" />
+                    ${typeof p === "number" ? `<path d="${arcPath}" stroke="rgba(56,189,248,.85)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${Math.max(0, p) * Math.PI * r} ${Math.PI * r}" />` : ``}
+                    <circle cx="${sunX}" cy="${sunY}" r="10" fill="rgba(250,204,21,.95)" stroke="rgba(0,0,0,.25)" stroke-width="2" />
+                  </svg>
+
+                  <div class="dayArcMeta">
+                    <div>Sunrise <b>${srTxt}</b></div>
+                    <div>Sunset <b>${ssTxt}</b></div>
+                  </div>
+                  <div class="s">${typeof p === "number" ? `${Math.round(p*100)}% of daylight elapsed` : "Sunrise/sunset not available"}</div>
+                </div>
+              </div>
+
             </div>
           </div>
         `);
@@ -1446,12 +1741,12 @@ state.hsl = {
           return `
   <div class="hsl-row ${soon ? "soon" : ""}">
 
-    <!-- Huge minutes block -->
-    <div class="hsl-minsBig" aria-label="Minutes until departure">
-      <div style="display:flex; align-items:baseline;">
-        <div class="num">${minsNum ?? "—"}</div>
-        <div class="unit">min</div>
-      </div>
+    <!-- Huge ROUTE + minutes block -->
+    <div class="hsl-minsBig" aria-label="Route and minutes until departure">
+      <span class="route">${(s.routeShortName ?? "?")}</span>
+      <span class="inWord">in</span>
+      <span class="mins">${minsNum ?? "—"}</span>
+      <span class="minsWord">mins</span>
     </div>
 
     <!-- Stop + message -->
@@ -1670,7 +1965,7 @@ state.hsl = {
      ***********************************************************************/
     const router = {
       init(){
-        state.pageCount = 4;
+        state.pageCount = 3; // Page 3 (school schedule) hidden for now
         router.buildDots();
         router.show(0, false);
 
@@ -1705,10 +2000,13 @@ state.hsl = {
         const idx = (i + state.pageCount) % state.pageCount;
         state.pageIndex = idx;
 
-        for (let p = 0; p < state.pageCount; p++){
-          const el = utils.el("page" + p);
-          if (el) el.classList.toggle("active", p === idx);
-        }
+        // Visible pages mapping (page2 intentionally hidden)
+        const visiblePages = [0, 1, 3];
+
+        visiblePages.forEach((pageId, visIdx) => {
+          const el = utils.el("page" + pageId);
+          if (el) el.classList.toggle("active", visIdx === idx);
+        });
         router.updateDots();
 
         if (manual){
