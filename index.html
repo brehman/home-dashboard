@@ -35,6 +35,14 @@
       --pad: 18px;
 
       --fadeMs: 380ms;
+
+      /* Glass (Apple-like) */
+      --glass: rgba(255,255,255,.08);
+      --glass2: rgba(255,255,255,.05);
+      --glassStroke: rgba(255,255,255,.18);
+      --glassStrokeSoft: rgba(255,255,255,.12);
+      --glassShadow: 0 18px 60px rgba(0,0,0,.45);
+      --glassInner: inset 0 1px 0 rgba(255,255,255,.12);
     }
 
     *{ box-sizing:border-box; }
@@ -246,13 +254,52 @@
       gap: var(--pad);
     }
 
-    .card{
+.card{
+  position:relative;
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  border: 1px solid var(--glassStroke);
+  box-shadow: var(--glassShadow), var(--glassInner);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
+  overflow:hidden;
+}
+
+.card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  pointer-events:none;
+  background:
+    radial-gradient(700px 260px at 18% 8%, rgba(255,255,255,.20), transparent 55%),
+    radial-gradient(520px 240px at 82% 18%, rgba(56,189,248,.14), transparent 60%);
+  opacity:.75;
+}
+
+    /* Reusable Apple-like glass panel */
+    .glass{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border: 1px solid var(--glassStrokeSoft);
+      box-shadow: var(--glassShadow), var(--glassInner);
+      backdrop-filter: blur(14px) saturate(1.25);
+      -webkit-backdrop-filter: blur(14px) saturate(1.25);
       position:relative;
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, var(--card), rgba(2,6,23,.58));
-      border: 1px solid rgba(148,163,184,.18);
-      box-shadow: var(--shadow);
       overflow:hidden;
+    }
+
+    /* Subtle specular highlight */
+    .glass::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      pointer-events:none;
+      background:
+        radial-gradient(700px 260px at 22% 8%, rgba(255,255,255,.18), transparent 55%),
+        radial-gradient(520px 240px at 78% 18%, rgba(56,189,248,.12), transparent 60%);
+      opacity:.75;
+      z-index:0;
     }
     .card .hdr{
       display:flex;
@@ -261,6 +308,8 @@
       padding: 14px 16px 8px 16px;
       border-bottom: 1px solid rgba(148,163,184,.12);
       background: linear-gradient(180deg, rgba(15,23,42,.55), rgba(15,23,42,0));
+      backdrop-filter: blur(10px) saturate(1.2);
+      -webkit-backdrop-filter: blur(10px) saturate(1.2);
     }
     .card .hdr h2{
       margin:0;
@@ -352,7 +401,7 @@
       color: rgba(239,68,68,.95);
     }
 
-    /* A simple icon "blob" with subtle glow */
+    /* A simple icon "blob" with subtle glow (Apple-like glass) */
     .wx-icon{
       width: 100%;
       height: 100%;
@@ -360,15 +409,34 @@
       display:grid;
       place-items:center;
       position:relative;
-      border-radius: 18px;
-      background: radial-gradient(160px 120px at 50% 40%, rgba(56,189,248,.22), rgba(0,0,0,0) 70%),
-                  linear-gradient(180deg, rgba(2,6,23,.25), rgba(2,6,23,.55));
-      border: 1px solid rgba(148,163,184,.14);
+      border-radius: 20px;
       overflow:hidden;
+
+      /* glassy icon panel */
+      background:
+        radial-gradient(180px 140px at 50% 38%, rgba(56,189,248,.22), transparent 70%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border: 1px solid var(--glassStrokeSoft);
+      box-shadow: 0 14px 40px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.10);
+      backdrop-filter: blur(16px) saturate(1.25);
+      -webkit-backdrop-filter: blur(16px) saturate(1.25);
+    }
+    .wx-icon::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(520px 260px at 28% 12%, rgba(255,255,255,.16), transparent 60%),
+        radial-gradient(420px 240px at 78% 22%, rgba(167,139,250,.12), transparent 62%);
+      opacity:.85;
+      z-index:0;
     }
     .wx-icon .glyph{
-      font-size: 84px;
-      filter: drop-shadow(0 12px 22px rgba(0,0,0,.35));
+      position:relative;
+      z-index:1;
+      font-size: 86px;
+      filter: drop-shadow(0 14px 28px rgba(0,0,0,.35));
       transform: translateY(-2px);
       animation: glyphFloat 4.8s ease-in-out infinite;
     }
@@ -387,15 +455,33 @@
 }
 
 .wx-top{
-  border-radius: 18px;
-  border:1px solid rgba(148,163,184,.14);
-  background: rgba(2,6,23,.18);
-  padding: 16px 16px;
+  position:relative;
+  border-radius: 20px;
+  padding: 18px 18px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap: 14px;
+  gap: 16px;
   overflow:hidden;
+  /* glass */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+  border: 1px solid var(--glassStroke);
+  box-shadow: 0 14px 44px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+}
+
+.wx-top::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(600px 240px at 18% 12%, rgba(255,255,255,.16), transparent 60%),
+    radial-gradient(520px 240px at 86% 18%, rgba(167,139,250,.10), transparent 62%);
+  opacity:.8;
+  z-index:0;
 }
 
 .wx-top .tBlock{
@@ -413,16 +499,16 @@
 }
 
 .wx-now .temp{
-  font-size: 74px;
+  font-size: 76px;
   line-height: 1;
-  font-weight: 950;
-  letter-spacing: -1px;
+  font-weight: 900;
+  letter-spacing: -1.4px;
 }
 
 .wx-now .feels{
-  font-size: 22px;
-  font-weight: 850;
-  color: var(--muted);
+  font-size: 20px;
+  font-weight: 800;
+  color: rgba(248,250,252,.78);
 }
 
 .wx-condline{
@@ -443,28 +529,47 @@
 }
 
 .wx-mini{
-  border-radius: 18px;
-  border:1px solid rgba(148,163,184,.14);
-  background: rgba(2,6,23,.18);
+  position:relative;
+  border-radius: 20px;
   padding: 14px 14px;
   display:flex;
   flex-direction:column;
   gap: 10px;
   overflow:hidden;
+  /* glass */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+  border: 1px solid var(--glassStrokeSoft);
+  box-shadow: 0 12px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
 }
 
+.wx-mini::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: radial-gradient(420px 200px at 20% 10%, rgba(255,255,255,.12), transparent 62%);
+  opacity:.75;
+  z-index:0;
+}
+
+.wx-mini > *{ position:relative; z-index:1; }
+.wx-top > *{ position:relative; z-index:1; }
+
 .wx-mini .k{
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
-  letter-spacing: .35px;
-  color: var(--muted);
+  letter-spacing: .55px;
+  color: rgba(248,250,252,.65);
   text-transform: uppercase;
 }
 
 .wx-mini .v{
-  font-size: 34px;
-  font-weight: 950;
-  letter-spacing: -0.5px;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
 }
 
 .wx-mini .s{
@@ -485,7 +590,6 @@
   height:46px;
   border-radius: 999px;
   border:1px solid rgba(148,163,184,.16);
-  background: rgba(15,23,42,.40);
   display:grid;
   place-items:center;
   flex:0 0 auto;
@@ -527,10 +631,11 @@
   color: var(--muted);
 }
 .dayArcMeta b{ color: var(--fg); }
-.dayArc{
-  width:100%;
-  height: 110px;
-}
+  .dayArc{
+    width:100%;
+    height: 110px;
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,.35));
+  }
 
     /* HSL list */
     .hsl-list{
@@ -546,7 +651,6 @@
       padding: 12px 12px;
       border-radius: 16px;
       border:1px solid rgba(148,163,184,.14);
-      background: rgba(2,6,23,.18);
       align-items:stretch; /* allow left minutes to span both lines */
     }
     /* Page 1 HSL: single-line huge "ROUTE in MINS" block */
@@ -557,7 +661,6 @@
       margin-right: 8px;
       border-radius: 16px;
       border:1px solid rgba(148,163,184,.16);
-      background: rgba(15,23,42,.40);
       display:flex;
       align-items:baseline;
       justify-content:center;
@@ -630,7 +733,6 @@
       border-radius: 18px;
       overflow:hidden;
       border: 1px solid rgba(148,163,184,.14);
-      background: rgba(2,6,23,.18);
     }
     iframe{
       width:100%;
@@ -646,7 +748,6 @@
   border-radius: 18px;
   overflow:hidden;
   border: 1px solid rgba(148,163,184,.14);
-  background: rgba(2,6,23,.18);
 
   /* TUNE THESE IF THE SITE LAYOUT CHANGES */
   --elecScale: 1.55;
@@ -689,7 +790,6 @@
     .slot{
       border-radius: 18px;
       border: 1px dashed rgba(148,163,184,.22);
-      background: rgba(2,6,23,.18);
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -721,7 +821,6 @@
   min-height:0;
   border-radius: 18px;
   border:1px solid rgba(148,163,184,.14);
-  background: rgba(2,6,23,.18);
   padding: 14px 14px;
   display:flex;
   flex-direction:column;
@@ -783,6 +882,24 @@
       .big{ font-size: 56px; }
       .wx-icon .glyph{ font-size: 76px; }
     }
+    /* Universal glass for inner boxes */
+.hsl-row,
+.hsl-minsBig,
+.wx-mini,
+.wx-top,
+.slot,
+.iframe-wrap,
+.stopRow,
+.timePill,
+.elec-crop{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border: 1px solid var(--glassStrokeSoft);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28),
+              inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+}
   </style>
 </head>
 
