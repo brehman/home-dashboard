@@ -642,14 +642,14 @@
     .hsl-list{
       display:flex;
       flex-direction:column;
-      gap:12px;
+      gap:8px; /* tighter so 4 rows fit */
     }
     .hsl-row{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding: 12px 12px;
+      padding: 10px 10px; /* reduced height */
       border-radius: 16px;
       border:1px solid rgba(148,163,184,.14);
       align-items:stretch; /* allow left minutes to span both lines */
@@ -658,7 +658,7 @@
     .hsl-minsBig{
       flex:0 0 auto;
       min-width: 220px;          /* wider so everything fits */
-      padding: 10px 16px;
+      padding: 8px 14px;
       margin-right: 8px;
       border-radius: 16px;
       border:1px solid rgba(148,163,184,.16);
@@ -726,6 +726,34 @@
       color: var(--muted);
       font-weight:700;
     }
+/* Page 1: Train catch suggestion */
+.hsl-suggest{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--glassStrokeSoft);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)),
+    linear-gradient(180deg, rgba(2,6,23,.18), rgba(2,6,23,.28));
+  box-shadow: 0 10px 26px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  font-weight: 900;
+}
+.hsl-suggest .lead{
+  font-size: 18px;
+  letter-spacing: .2px;
+}
+.hsl-suggest .meta{
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(248,250,252,.78);
+  white-space: nowrap;
+}
 
     /* Iframes */
     .iframe-wrap{
@@ -1033,8 +1061,11 @@
               <h2>Next departures</h2>
               <div class="sub" id="hslSub">Loading…</div>
             </div>
-            <div class="body" id="hslBody">
-              <div class="center-msg">
+<div class="body" id="hslBody">
+  <div id="hslSuggest" class="hsl-suggest">
+    <span class="small muted">Loading suggestion…</span>
+  </div>
+  <div class="center-msg">
                 <div><b>Loading HSL…</b><br><span class="muted">If offline, cached data will appear.</span></div>
               </div>
             </div>
@@ -1286,7 +1317,16 @@
   { id: "HSL:2111552", label: "Leppävaara → Helsinki", format: "Train {routeShortName} leaves in {mins} mins from Leppävaara", target: "leppavaaraHkiTimes" },
   { id: "HSL:3010551", label: "Kauniainen → Helsinki", format: "Train {routeShortName} leaves in {mins} mins", target: "kauniainenTimes" }
 ],
-        departuresPerStop: 5
+departuresPerStop: 5,
+
+// Drive-time (from home) to reach stations for train-catching suggestions
+driveMinutesByStopId: {
+  "HSL:2111552": 13, // Leppävaara
+  "HSL:3010551": 10  // Kauniainen
+},
+
+// How close to departure counts as “leave now”
+leaveNowBufferMins: 5
       },
 
 ELECTRICITY: {
@@ -1980,7 +2020,18 @@ state.hsl = {
             ? `<div class="badge err">HSL API down · retrying</div>`
             : `<div class="badge">Loading…</div>`;
 
+          const msg = state.hslStatus === "down"
+            ? "Train suggestion unavailable — using cache if available"
+            : "Loading suggestion…";
+
+          const suggestBlock = `
+            <div class="hsl-suggest">
+              <span class="small muted">${msg}</span>
+            </div>
+          `;
+
           utils.setHTML(body, `
+            ${suggestBlock}
             <div class="center-msg">
               <div>
                 <b>HSL unavailable</b><br>
@@ -2038,7 +2089,66 @@ state.hsl = {
           </div>
         `;
 
+        // --- Train catch suggestion (Leppävaara / Kauniainen) ---
+        function computeTrainSuggestion(){
+          const lists = state.hsl && Array.isArray(state.hsl.perStopLists) ? state.hsl.perStopLists : null;
+          if (!lists) return { text: "Loading suggestion…", meta: "" };
+
+          const targets = Object.keys(CONFIG.HSL.driveMinutesByStopId || {});
+          const buffer = Number(CONFIG.HSL.leaveNowBufferMins ?? 5);
+
+          const candidates = [];
+          for (const stopId of targets){
+            const driveMins = Number(CONFIG.HSL.driveMinutesByStopId[stopId]);
+            if (!Number.isFinite(driveMins)) continue;
+
+            const stopObj = lists.find(x => x && x.id === stopId);
+            if (!stopObj || !Array.isArray(stopObj.list)) continue;
+
+            // Prefer train-like routeShortName (e.g., R, U, E, I, etc.) but fall back if unknown
+            const dep = stopObj.list.find(d => d && typeof d.mins === "number" && d.mins >= driveMins);
+            if (!dep) continue;
+
+            const slack = dep.mins - driveMins;
+            candidates.push({
+              station: stopObj.label,
+              train: dep.routeShortName || "?",
+              depMins: dep.mins,
+              driveMins,
+              slack
+            });
+          }
+
+          if (!candidates.length){
+            return { text: "No catchable train found (yet)", meta: "Try again soon" };
+          }
+
+          candidates.sort((a,b) => a.depMins - b.depMins);
+          const best = candidates[0];
+
+          if (best.slack <= buffer){
+            return {
+              text: `Leave now for ${best.station} to catch ${best.train}`,
+              meta: `${best.driveMins} min drive · dep in ${best.depMins} min`
+            };
+          }
+
+          return {
+            text: `Next train: ${best.train} from ${best.station}`,
+            meta: `Dep in ${best.depMins} min · drive ${best.driveMins} min · leave in ${Math.max(0, best.slack - buffer)} min`
+          };
+        }
+
+        const sug = computeTrainSuggestion();
+        const suggestBlock = `
+          <div class="hsl-suggest">
+            <div class="lead">${sug.text}</div>
+            <div class="meta">${sug.meta}</div>
+          </div>
+        `;
+
         utils.setHTML(body, `
+          ${suggestBlock}
           ${topBadges}
           <div class="hsl-list">${rows}</div>
         `);
