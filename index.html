@@ -756,6 +756,10 @@
 }
 
     /* Iframes */
+    /* Page 1 Calendar – agenda clarity */
+#cardCal iframe{
+  filter: saturate(1.1) contrast(1.05);
+}
     .iframe-wrap{
       height:100%;
       width:100%;
@@ -1077,8 +1081,8 @@
               <h2>Electricity spot price</h2>
               <div class="sub">Embed + link fallback</div>
             </div>
-            <div class="body" style="display:grid; grid-template-rows: 1fr auto; gap:12px;">
-<div class="elec-crop" aria-label="Electricity spot price (cropped)">
+<div class="body" style="display:grid; grid-template-rows: 1fr;">
+  <div class="elec-crop" aria-label="Electricity spot price (cropped)">
   <iframe id="iframeElecHome" title="Electricity spot price"
           loading="lazy" referrerpolicy="no-referrer"></iframe>
 </div>
@@ -1103,9 +1107,7 @@
                 <iframe id="iframeCal" title="Family calendar"
                         loading="lazy" referrerpolicy="no-referrer"></iframe>
               </div>
-              <div class="muted">
-                <b>Top 3 events today:</b> Not available without OAuth — showing embedded calendar instead.
-              </div>
+
             </div>
           </div>
         </div>
@@ -1226,42 +1228,18 @@
         </div>
       </section>
 
-<!-- PAGE 4: DETAILED HSL (direct values, no iframes) -->
-<section class="page" id="page3" aria-label="Detailed HSL">
-  <div class="card" id="hslCardFull" style="height:100%;">
+<!-- PAGE 4: (HIDDEN FOR NOW) -->
+<section class="page" id="page3" aria-label="Detailed HSL" style="display:none;">
+  <div class="card" style="height:100%;">
     <div class="hdr">
       <h2>HSL — Detailed</h2>
-      <div class="sub" id="hslFullSub">Loading…</div>
+      <div class="sub">Hidden</div>
     </div>
-
-    <div class="body" style="height: calc(100% - 54px); min-height:0;">
-      <div class="routesCols routesCols4">
-        <div class="stopRow">
-          <div class="stopTitle"><b>Kavallinmäki</b></div>
-          <div class="times" id="kavallinmakiTimes">
-            <span class="small muted">Loading…</span>
-          </div>
-        </div>
-
-        <div class="stopRow">
-          <div class="stopTitle"><b>Viherlaaksontori</b></div>
-          <div class="times" id="viherlaaksontoriTimes">
-            <span class="small muted">Loading…</span>
-          </div>
-        </div>
-
-        <div class="stopRow">
-          <div class="stopTitle"><b>Leppävaara → Helsinki</b></div>
-          <div class="times" id="leppavaaraHkiTimes">
-            <span class="small muted">Loading…</span>
-          </div>
-        </div>
-
-        <div class="stopRow">
-          <div class="stopTitle"><b>Kauniaisten asema</b></div>
-          <div class="times" id="kauniainenTimes">
-            <span class="small muted">Loading…</span>
-          </div>
+    <div class="body">
+      <div class="center-msg">
+        <div>
+          <b>Page hidden</b><br>
+          <span class="muted">Detailed HSL view is disabled for now.</span>
         </div>
       </div>
     </div>
@@ -1337,7 +1315,7 @@ ELECTRICITY: {
 },
 
       CALENDAR: {
-        embedUrl: "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki"
+        embedUrl: "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki&mode=AGENDA&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0"
       },
 
       IFRAME: {
@@ -1485,27 +1463,28 @@ ELECTRICITY: {
       },
 
       // Very small template formatter
-      // UV helpers
-uvLevel(u){
-  const v = Number(u);
-  if (!Number.isFinite(v)) return { label: "—", cls: "" };
-  if (v < 3) return { label: "Low", cls: "good" };
-  if (v < 6) return { label: "Moderate", cls: "warn" };
-  if (v < 8) return { label: "High", cls: "warn" };
-  if (v < 11) return { label: "Very high", cls: "bad" };
-  return { label: "Extreme", cls: "bad" };
-},
 
-// Compute daylight progress [0..1] between sunrise/sunset (expects ISO strings)
-daylightProgress(sunriseISO, sunsetISO){
-  if (!sunriseISO || !sunsetISO) return null;
-  const sr = new Date(sunriseISO).getTime();
-  const ss = new Date(sunsetISO).getTime();
-  if (!Number.isFinite(sr) || !Number.isFinite(ss) || ss <= sr) return null;
-  const now = Date.now();
-  const p = (now - sr) / (ss - sr);
-  return utils.clamp(p, 0, 1);
-},
+      // UV helpers
+      uvLevel(u){
+        const v = Number(u);
+        if (!Number.isFinite(v)) return { label: "—", cls: "" };
+        if (v < 3) return { label: "Low", cls: "good" };
+        if (v < 6) return { label: "Moderate", cls: "warn" };
+        if (v < 8) return { label: "High", cls: "warn" };
+        if (v < 11) return { label: "Very high", cls: "bad" };
+        return { label: "Extreme", cls: "bad" };
+      },
+
+      // Compute daylight progress [0..1] between sunrise/sunset (expects ISO strings)
+      daylightProgress(sunriseISO, sunsetISO){
+        if (!sunriseISO || !sunsetISO) return null;
+        const sr = new Date(sunriseISO).getTime();
+        const ss = new Date(sunsetISO).getTime();
+        if (!Number.isFinite(sr) || !Number.isFinite(ss) || ss <= sr) return null;
+        const now = Date.now();
+        const p = (now - sr) / (ss - sr);
+        return utils.clamp(p, 0, 1);
+      },
       formatTemplate(tpl, vars){
         return tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ""));
       }
@@ -2350,7 +2329,7 @@ state.hsl = {
      ***********************************************************************/
     const router = {
       init(){
-        state.pageCount = 3; // Page 3 (school schedule) hidden for now
+        state.pageCount = 2; // Only Today + Planning (others hidden)
         router.buildDots();
         router.show(0, false);
 
@@ -2385,8 +2364,8 @@ state.hsl = {
         const idx = (i + state.pageCount) % state.pageCount;
         state.pageIndex = idx;
 
-        // Visible pages mapping (page2 intentionally hidden)
-        const visiblePages = [0, 1, 3];
+        // Visible pages mapping (only Today + Planning)
+        const visiblePages = [0, 1];
 
         visiblePages.forEach((pageId, visIdx) => {
           const el = utils.el("page" + pageId);
