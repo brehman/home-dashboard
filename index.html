@@ -775,6 +775,40 @@
       gap: var(--pad);
     }
 
+    /* Page 2: Combined planning layout (top electricity + bottom HSL) */
+    .planning-combo{
+      height:100%;
+      display:grid;
+      grid-template-rows: 0.52fr 0.48fr; /* top shorter, bottom for HSL */
+      gap: var(--pad);
+      min-height:0;
+    }
+
+    /* Top electricity row slightly reduced */
+    .planning-top{
+      min-height:0;
+    }
+
+    /* Bottom HSL panel inside Page 2 */
+    .planning-bottom{
+      min-height:0;
+    }
+
+    /* Make the electricity iframes fit the reduced height */
+    .planning-top .card .body{
+      height: calc(100% - 54px);
+      min-height:0;
+    }
+
+    .planning-top .iframe-wrap{
+      height:100%;
+    }
+
+    /* Slightly tighter padding for Page 2 cards */
+    #page1 .card .body{
+      padding: 12px 14px 14px 14px;
+    }
+
     /* Page 3 placeholder layout */
     .schedule-layout{
       height:100%;
@@ -815,9 +849,12 @@
   align-items:stretch;
   min-height:0;
 }
-.routesCols3{
-  grid-template-columns: 1fr 1fr 1fr;
-}
+    .routesCols3{
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .routesCols4{
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
 .stopRow{
   min-height:0;
   border-radius: 18px;
@@ -836,7 +873,7 @@
 .times{
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:6px;
   min-height:0;
   overflow:auto;
   padding-right:6px;
@@ -845,16 +882,16 @@
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:14px;
-  padding: 18px 20px;       /* increased padding for balance */
-  border-radius: 18px;
+  gap:10px;
+  padding: 12px 14px;      /* reduced height */
+  border-radius: 16px;
   border:1px solid rgba(148,163,184,.14);
   background: rgba(15,23,42,.42);
   font-weight:900;
-  font-size:32px;           /* doubled */
+  font-size:26px;          /* slightly smaller but still bold */
 }
 .timeMeta{
-  font-size:26px;           /* doubled */
+  font-size:20px;
   font-weight:800;
   color: var(--muted);
   white-space:nowrap;
@@ -1043,34 +1080,81 @@
         </div>
       </section>
 
-      <!-- PAGE 2: PLANNING (two embed iframes) -->
+      <!-- PAGE 2: PLANNING (combined layout: electricity + detailed HSL) -->
       <section class="page" id="page1" aria-label="Planning">
-        <div class="two-cols">
-          <div class="card">
-            <div class="hdr">
-              <h2>Electricity — Today</h2>
-              <div class="sub">Embed</div>
+        <div class="planning-combo">
+
+          <!-- TOP: Electricity (shorter) -->
+          <div class="planning-top two-cols">
+            <div class="card">
+              <div class="hdr">
+                <h2>Electricity — Today</h2>
+                <div class="sub">Embed</div>
+              </div>
+              <div class="body">
+                <div class="iframe-wrap">
+                  <iframe id="iframeElecToday" title="Electricity today"
+                          loading="lazy" referrerpolicy="no-referrer"></iframe>
+                </div>
+              </div>
             </div>
-            <div class="body">
-              <div class="iframe-wrap">
-                <iframe id="iframeElecToday" title="Electricity today"
-                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+
+            <div class="card">
+              <div class="hdr">
+                <h2>Electricity — Tomorrow</h2>
+                <div class="sub">Embed</div>
+              </div>
+              <div class="body">
+                <div class="iframe-wrap">
+                  <iframe id="iframeElecTomorrow" title="Electricity tomorrow"
+                          loading="lazy" referrerpolicy="no-referrer"></iframe>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="card">
-            <div class="hdr">
-              <h2>Electricity — Tomorrow</h2>
-              <div class="sub">Embed</div>
-            </div>
-            <div class="body">
-              <div class="iframe-wrap">
-                <iframe id="iframeElecTomorrow" title="Electricity tomorrow"
-                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+          <!-- BOTTOM: Detailed HSL (4 columns) -->
+          <div class="planning-bottom">
+            <div class="card" id="hslCardFull2" style="height:100%;">
+              <div class="hdr">
+                <h2>HSL — Detailed</h2>
+                <div class="sub" id="hslFullSub2">Loading…</div>
+              </div>
+
+              <div class="body" style="height: calc(100% - 54px); min-height:0;">
+                <div class="routesCols routesCols4">
+                  <div class="stopRow">
+                    <div class="stopTitle"><b>Kavallinmäki</b></div>
+                    <div class="times" id="kavallinmakiTimes2">
+                      <span class="small muted">Loading…</span>
+                    </div>
+                  </div>
+
+                  <div class="stopRow">
+                    <div class="stopTitle"><b>Viherlaaksontori</b></div>
+                    <div class="times" id="viherlaaksontoriTimes2">
+                      <span class="small muted">Loading…</span>
+                    </div>
+                  </div>
+
+                  <div class="stopRow">
+                    <div class="stopTitle"><b>Leppävaara → Helsinki</b></div>
+                    <div class="times" id="leppavaaraHkiTimes2">
+                      <span class="small muted">Loading…</span>
+                    </div>
+                  </div>
+
+                  <div class="stopRow">
+                    <div class="stopTitle"><b>Kauniainen → Helsinki</b></div>
+                    <div class="times" id="kauniainenTimes2">
+                      <span class="small muted">Loading…</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
@@ -1120,7 +1204,7 @@
     </div>
 
     <div class="body" style="height: calc(100% - 54px); min-height:0;">
-      <div class="routesCols routesCols3">
+      <div class="routesCols routesCols4">
         <div class="stopRow">
           <div class="stopTitle"><b>Kavallinmäki</b></div>
           <div class="times" id="kavallinmakiTimes">
@@ -1138,6 +1222,13 @@
         <div class="stopRow">
           <div class="stopTitle"><b>Leppävaara → Helsinki</b></div>
           <div class="times" id="leppavaaraHkiTimes">
+            <span class="small muted">Loading…</span>
+          </div>
+        </div>
+
+        <div class="stopRow">
+          <div class="stopTitle"><b>Kauniaisten asema</b></div>
+          <div class="times" id="kauniainenTimes">
             <span class="small muted">Loading…</span>
           </div>
         </div>
@@ -1192,7 +1283,8 @@
         stops: [
   { id: "HSL:2151204", label: "Kavallinmäki", format: "Bus {routeShortName} leaves in {mins} mins", target: "kavallinmakiTimes" },
   { id: "HSL:2151208", label: "Viherlaaksontori", format: "Bus {routeShortName} leaves in {mins} mins", target: "viherlaaksontoriTimes" },
-  { id: "HSL:2111552", label: "Leppävaara → Helsinki", format: "Train {routeShortName} leaves in {mins} mins from Leppävaara", target: "leppavaaraHkiTimes" }
+  { id: "HSL:2111552", label: "Leppävaara → Helsinki", format: "Train {routeShortName} leaves in {mins} mins from Leppävaara", target: "leppavaaraHkiTimes" },
+  { id: "HSL:3010551", label: "Kauniainen → Helsinki", format: "Train {routeShortName} leaves in {mins} mins", target: "kauniainenTimes" }
 ],
         departuresPerStop: 5
       },
@@ -1504,10 +1596,11 @@ const data = {
       // HSL GraphQL: exact query with aliases
       hslQuery(){
         return `
-          query($s1: String!, $s2: String!, $s3: String!, $n: Int!) {
+          query($s1: String!, $s2: String!, $s3: String!, $s4: String!, $n: Int!) {
             a: stop(id: $s1) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
             b: stop(id: $s2) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
             c: stop(id: $s3) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
+            d: stop(id: $s4) { stoptimesWithoutPatterns(numberOfDepartures: $n) { realtimeDeparture scheduledDeparture realtime serviceDay trip { routeShortName } } }
           }
         `.trim();
       },
@@ -1520,6 +1613,7 @@ const data = {
             s1: stops[0].id,
             s2: stops[1].id,
             s3: stops[2].id,
+            s4: stops[3].id,
             n: CONFIG.HSL.departuresPerStop
           };
 
@@ -1560,23 +1654,27 @@ function pickSoonest(list){
 const listA = normalizeList(data.a);
 const listB = normalizeList(data.b);
 const listC = normalizeList(data.c);
+const listD = normalizeList(data.d);
 
 const soonA = pickSoonest(listA);
 const soonB = pickSoonest(listB);
 const soonC = pickSoonest(listC);
+const soonD = pickSoonest(listD);
 
 // Page 1: 1 row per stop (soonest)
 const perStopSoonest = [
   { ...stops[0], ...(soonA || { routeShortName:"?", mins:"—", departureMs: 0 }) },
   { ...stops[1], ...(soonB || { routeShortName:"?", mins:"—", departureMs: 0 }) },
-  { ...stops[2], ...(soonC || { routeShortName:"?", mins:"—", departureMs: 0 }) }
+  { ...stops[2], ...(soonC || { routeShortName:"?", mins:"—", departureMs: 0 }) },
+  { ...stops[3], ...(soonD || { routeShortName:"?", mins:"—", departureMs: 0 }) }
 ];
 
 // Page 4: next N departures per stop
 const perStopLists = [
   { ...stops[0], list: listA },
   { ...stops[1], list: listB },
-  { ...stops[2], list: listC }
+  { ...stops[2], list: listC },
+  { ...stops[3], list: listD }
 ];
 
 state.hsl = {
@@ -1937,7 +2035,6 @@ state.hsl = {
           <div class="wx-badges" style="margin-bottom:12px;">
             ${stale ? `<span class="badge stale">STALE</span>` : ``}
             ${state.hslStatus === "down" ? `<span class="badge err">API DOWN · retrying</span>` : ``}
-            <span class="badge">1 row per stop</span>
           </div>
         `;
 
@@ -1948,39 +2045,47 @@ state.hsl = {
       }
       ,
       hslDetailed(){
-        const sub = utils.el("hslFullSub");
-        if (sub){
-          const has = !!state.hsl && Array.isArray(state.hsl.perStopLists);
-          if (has) {
-            const ageMs = Date.now() - (state.hsl.fetchedAtMs || 0);
-            const stale = ageMs > (CONFIG.DATA_REFRESH.HSL_MS * 2.5);
-            utils.setText(sub, `Updated ${utils.ageLabel(state.hsl.fetchedAtMs)}${stale ? " · stale" : ""}`);
-          } else {
-            utils.setText(sub, "No data yet");
-          }
-        }
+        const subA = utils.el("hslFullSub");
+        const subB = utils.el("hslFullSub2");
+
+        const hasLists = !!state.hsl && Array.isArray(state.hsl.perStopLists);
+        const subText = hasLists
+          ? (() => {
+              const ageMs = Date.now() - (state.hsl.fetchedAtMs || 0);
+              const stale = ageMs > (CONFIG.DATA_REFRESH.HSL_MS * 2.5);
+              return `Updated ${utils.ageLabel(state.hsl.fetchedAtMs)}${stale ? " · stale" : ""}`;
+            })()
+          : "No data yet";
+
+        if (subA) utils.setText(subA, subText);
+        if (subB) utils.setText(subB, subText);
 
         const has = !!state.hsl && Array.isArray(state.hsl.perStopLists);
 
         if (!has){
           for (const st of CONFIG.HSL.stops){
-            const el = utils.el(st.target);
-            if (el) utils.setHTML(el, `<span class="small muted">${state.hslStatus === "down" ? "API down — using cache if available" : "Loading…"}</span>`);
+            const elA = utils.el(st.target);
+            const elB = utils.el(st.target + "2");
+            const msg = `<span class="small muted">${state.hslStatus === "down" ? "API down — using cache if available" : "Loading…"}</span>`;
+            if (elA) utils.setHTML(elA, msg);
+            if (elB) utils.setHTML(elB, msg);
           }
           return;
         }
 
         for (const stop of state.hsl.perStopLists){
-          const targetEl = utils.el(stop.target);
-          if (!targetEl) continue;
+          const targetElA = utils.el(stop.target);
+          const targetElB = utils.el(stop.target + "2");
+          if (!targetElA && !targetElB) continue;
 
           const list = Array.isArray(stop.list) ? stop.list : [];
           if (!list.length){
-            utils.setHTML(targetEl, `<span class="small muted">No departures found</span>`);
+            if (targetElA) utils.setHTML(targetElA, `<span class="small muted">No departures found</span>`);
+            if (targetElB) utils.setHTML(targetElB, `<span class="small muted">No departures found</span>`);
             continue;
           }
 
-          const html = list.map((d) => {
+          const html = list.slice(0, 5).map((d) => {
             const depTime = d.departureMs ? utils.fmtTime(new Date(d.departureMs), { hour:"2-digit", minute:"2-digit" }) : "—";
             const mins = (typeof d.mins === "number") ? d.mins : "—";
             const rt = d.routeShortName || "?";
@@ -1998,7 +2103,8 @@ state.hsl = {
             `;
           }).join("");
 
-          utils.setHTML(targetEl, html);
+          if (targetElA) utils.setHTML(targetElA, html);
+          if (targetElB) utils.setHTML(targetElB, html);
         }
       }
     };
