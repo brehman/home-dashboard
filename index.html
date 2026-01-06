@@ -246,6 +246,64 @@
     }
 
     /* Cards and layouts */
+
+    /* Calendar: Top 5 event boxes (Page 1) */
+.cal-grid{
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 10px;
+}
+
+.cal-item{
+  border-radius: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--glassStrokeSoft);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)),
+    linear-gradient(180deg, rgba(2,6,23,.18), rgba(2,6,23,.30));
+  box-shadow: 0 10px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(14px) saturate(1.25);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.cal-title{
+  font-weight: 950;
+  font-size: 18px;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px rgba(0,0,0,.38);
+}
+
+.cal-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  font-weight: 850;
+  font-size: 14px;
+  color: rgba(248,250,252,.80);
+  white-space: nowrap;
+}
+
+.cal-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,.20);
+  background: rgba(2,6,23,.46);
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(248,250,252,.92);
+}
     .grid-2x2{
       height:100%;
       display:grid;
@@ -1098,18 +1156,19 @@
 
           <!-- Calendar -->
           <div class="card" id="cardCal">
-            <div class="hdr">
-              <h2>Calendar</h2>
-              <div class="sub">Embed (events list needs OAuth)</div>
-            </div>
-            <div class="body" style="display:grid; grid-template-rows: 1fr auto; gap:12px;">
-              <div class="iframe-wrap">
-                <iframe id="iframeCal" title="Family calendar"
-                        loading="lazy" referrerpolicy="no-referrer"></iframe>
-              </div>
+  <div class="hdr">
+    <h2>Calendar</h2>
+    <div class="sub" id="calSub">Loading…</div>
+  </div>
 
-            </div>
-          </div>
+  <div class="body" id="calBody">
+    <div id="calEvents" class="cal-grid" aria-label="Top calendar events">
+      <div class="center-msg">
+        <div><b>Loading events…</b><br><span class="muted">Using public calendar feed.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
         </div>
       </section>
 
@@ -1314,9 +1373,17 @@ ELECTRICITY: {
   homeEmbed: "https://www.sahkonhintatanaan.fi?mode=embed&layout=minimal&hide-examples=1&zoom=1.8&background=ffffff"
 },
 
-      CALENDAR: {
-        embedUrl: "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki&mode=AGENDA&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0"
-      },
+CALENDAR: {
+  // Public iCal feed (Google blocks CORS)
+  icsUrl: "https://calendar.google.com/calendar/ical/np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com/public/basic.ics",
+  refreshMs: 5 * 60 * 1000,
+
+  // Proxy fallbacks (tried in order)
+  corsProxies: {
+    allOriginsRaw: "https://api.allorigins.win/raw?url=",  // + encodeURIComponent(url)
+    jinaAI: "https://r.jina.ai/https://"                   // + url WITHOUT protocol
+  }
+},
 
       IFRAME: {
         // For 24/7 dashboards: reduce CPU usage
@@ -1347,6 +1414,15 @@ ELECTRICITY: {
       hslBackoffMs: CONFIG.BACKOFF.START_MS,
       hslNextTryMs: 0,
 
+      //Calendar
+      // Calendar (public ICS)
+calendar: null,               // { events:[{title,startMs,endMs,allDay}], fetchedAtMs }
+calendarStatus: "init",       // "init" | "ok" | "down"
+calendarLastSuccessMs: 0,
+calendarLastAttemptMs: 0,
+calendarBackoffMs: CONFIG.BACKOFF.START_MS,
+calendarNextTryMs: 0,
+
       // Router
       pageIndex: 0,
       pageCount: 4,
@@ -1365,6 +1441,7 @@ ELECTRICITY: {
         rotation: null,
         weather: null,
         hsl: null,
+        calendar: null,
         retryTick: null
       }
     };
@@ -1386,6 +1463,18 @@ ELECTRICITY: {
           el.__lastHTML = html;
         }
       },
+
+      unfoldICSLines(text){
+  const raw = String(text || "").split(/\r?\n/);
+  const out = [];
+  for (const ln of raw){
+    if (!ln) continue;
+    if (/^[ \t]/.test(ln) && out.length){
+      out[out.length-1] += ln.trim();
+    } else out.push(ln.trim());
+  }
+  return out;
+},
 
       // Safe set text only when changed
       setText(el, text){
@@ -1450,6 +1539,19 @@ ELECTRICITY: {
         }
       },
 
+// Fetch wrapper for plain text (used for ICS)
+async fetchText(url, options={}, timeoutMs=CONFIG.FETCH_TIMEOUT_MS){
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try{
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  }finally{
+    clearTimeout(t);
+  }
+},
+
       // POST JSON helper
       async postJSON(url, bodyObj, headers={}, timeoutMs=CONFIG.FETCH_TIMEOUT_MS){
         return utils.fetchJSON(url, {
@@ -1496,7 +1598,9 @@ ELECTRICITY: {
     const cache = {
       keys: {
         weather: "tvDash.weather.v1",
+        calendar: "tvDash.calendar.v1",
         hsl: "tvDash.hsl.v1"
+        
       },
 
       load(){
@@ -1521,6 +1625,18 @@ ELECTRICITY: {
             }
           }
         }catch(e){ /* ignore */ }
+
+        //load cached calendar
+                // Load cached calendar
+        try{
+          const c = localStorage.getItem(cache.keys.calendar);
+          if (c){
+            const obj = JSON.parse(c);
+            if (obj && obj.data){
+              state.calendar = obj.data;
+            }
+          }
+        }catch(e){ /* ignore */ }
       },
 
       saveWeather(){
@@ -1532,6 +1648,16 @@ ELECTRICITY: {
           }));
         }catch(e){ /* ignore quota */ }
       },
+
+      saveCalendar(){
+  try{
+    if (!state.calendar) return;
+    localStorage.setItem(cache.keys.calendar, JSON.stringify({
+      savedAtMs: Date.now(),
+      data: state.calendar
+    }));
+  }catch(e){}
+},
 
       saveHsl(){
         try{
@@ -1722,6 +1848,125 @@ state.hsl = {
         }finally{
           render.statusBar();
         }
+      },
+
+      // Calendar (Public ICS) — no OAuth
+async fetchCalendar(){
+  state.calendarLastAttemptMs = Date.now();
+
+  const direct = CONFIG.CALENDAR.icsUrl;
+  const enc = encodeURIComponent(direct);
+  const noProto = direct.replace(/^https?:\/\//, ""); // for jina
+
+  const candidates = [
+    direct,
+    (CONFIG.CALENDAR.corsProxies?.allOriginsRaw || "https://api.allorigins.win/raw?url=") + enc,
+    (CONFIG.CALENDAR.corsProxies?.jinaAI || "https://r.jina.ai/https://") + noProto
+  ];
+
+  try{
+    let icsText = "";
+    let usedUrl = "";
+
+    for (const url of candidates){
+      try{
+        const txt = await utils.fetchText(url, {}, CONFIG.FETCH_TIMEOUT_MS);
+
+        // Basic validation that it's actually an ICS
+        if (txt && txt.includes("BEGIN:VCALENDAR") && txt.includes("BEGIN:VEVENT")){
+          icsText = txt;
+          usedUrl = url;
+          break;
+        }
+      }catch(e){
+        // try next candidate
+      }
+    }
+
+    if (!icsText) throw new Error("Calendar fetch failed (CORS/proxy)");
+
+    const all = api.parseICS(icsText);
+    const now = Date.now();
+
+    const upcoming = all
+      .filter(e => e && typeof e.startMs === "number" && e.startMs >= now - 60*1000)
+      .sort((a,b) => a.startMs - b.startMs)
+      .slice(0, 5);
+
+    state.calendar = { events: upcoming, fetchedAtMs: Date.now(), source: usedUrl };
+    state.calendarStatus = "ok";
+    state.calendarLastSuccessMs = Date.now();
+    state.calendarBackoffMs = CONFIG.BACKOFF.START_MS;
+    state.calendarNextTryMs = 0;
+
+    cache.saveCalendar();
+    render.calendar();
+    render.statusBar();
+  }catch(err){
+    state.calendarStatus = "down";
+    state.calendarBackoffMs = utils.nextBackoff(state.calendarBackoffMs);
+    state.calendarNextTryMs = Date.now() + state.calendarBackoffMs;
+    render.calendar();
+    render.statusBar();
+  }
+},
+
+      parseICS(text){
+        const lines = utils.unfoldICSLines(text);
+        const events = [];
+        let cur = null;
+
+        const parseDT = (v) => {
+          const s = String(v || "").trim();
+          if (!s) return null;
+
+          // All-day date: YYYYMMDD
+          if (/^\d{8}$/.test(s)){
+            const y = Number(s.slice(0,4));
+            const m = Number(s.slice(4,6)) - 1;
+            const d = Number(s.slice(6,8));
+            return new Date(y, m, d, 0, 0, 0).getTime();
+          }
+
+          // Date-time: YYYYMMDDTHHMMSSZ?
+          const m = s.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/);
+          if (!m) return null;
+
+          const yy = Number(m[1]), mo = Number(m[2]) - 1, dd = Number(m[3]);
+          const hh = Number(m[4]), mi = Number(m[5]), ss = Number(m[6]);
+          const isZ = !!m[7];
+          return isZ ? Date.UTC(yy, mo, dd, hh, mi, ss) : new Date(yy, mo, dd, hh, mi, ss).getTime();
+        };
+
+        for (const ln of lines){
+          if (ln === "BEGIN:VEVENT"){ cur = {}; continue; }
+          if (ln === "END:VEVENT"){
+            if (cur && cur.title && typeof cur.startMs === "number"){
+              cur.allDay = false;
+              if (typeof cur.endMs === "number"){
+                const dur = cur.endMs - cur.startMs;
+                if (dur >= 23.5*3600*1000 && dur <= 24.5*3600*1000) cur.allDay = true;
+              }
+              events.push(cur);
+            }
+            cur = null;
+            continue;
+          }
+          if (!cur) continue;
+
+          const idx = ln.indexOf(":");
+          if (idx === -1) continue;
+
+          const keyPart = ln.slice(0, idx);
+          const val = ln.slice(idx+1);
+          const key = keyPart.split(";")[0];
+
+          if (key === "SUMMARY") cur.title = val || "Untitled";
+          if (key === "DTSTART") cur.startMs = parseDT(val);
+          if (key === "DTEND") cur.endMs = parseDT(val);
+        }
+
+        return events;
       }
     };
 
@@ -1775,6 +2020,52 @@ state.hsl = {
         const html = `<span>${day}, ${date}</span> · <b style="font-size:16px; letter-spacing:.2px;">${time}</b>`;
         utils.setHTML(clockEl, html);
       },
+
+      //render calendar
+      calendar(){
+  const sub = utils.el("calSub");
+  const box = utils.el("calEvents");
+  if (!box) return;
+
+  const has = !!state.calendar && Array.isArray(state.calendar.events);
+  const age = state.calendar?.fetchedAtMs ? utils.ageLabel(state.calendar.fetchedAtMs) : "—";
+
+  if (sub){
+    if (has) utils.setText(sub, `Top 5 · updated ${age}`);
+    else utils.setText(sub, state.calendarStatus === "down" ? "Calendar DOWN" : "Loading…");
+  }
+
+  // Use cached events if present
+  const events = has ? state.calendar.events : (state.calendar?.events || []);
+
+  if (!events || !events.length){
+    const msg = state.calendarStatus === "down" ? "Calendar feed unavailable" : "No upcoming events";
+    utils.setHTML(box, `
+      <div class="center-msg">
+        <div><b>${msg}</b><br><span class="muted">Public calendar feed.</span></div>
+      </div>
+    `);
+    return;
+  }
+
+  const html = events.slice(0,5).map((e, idx) => {
+    const d = new Date(e.startMs);
+    const dateStr = utils.fmtTime(d, { weekday:"short", month:"short", day:"2-digit" });
+    const timeStr = e.allDay ? "All day" : utils.fmtTime(d, { hour:"2-digit", minute:"2-digit" });
+
+    return `
+      <div class="cal-item">
+        <div class="cal-title">${e.title || "Untitled"}</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <span class="cal-badge">#${idx+1}</span>
+          <div class="cal-meta"><span>${dateStr}</span><span>${timeStr}</span></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  utils.setHTML(box, html);
+},
 
       weather(){
         const sub = utils.el("wxSub");
@@ -2392,6 +2683,7 @@ state.hsl = {
           render.statusBar();
           state.weatherNextTryMs = 0;
           state.hslNextTryMs = 0;
+          state.calendarNextTryMs = 0;
         });
         window.addEventListener("offline", () => {
           state.online = false;
@@ -2406,6 +2698,11 @@ state.hsl = {
     const scheduler = {
       start(){
         scheduler.stop();
+
+        state.timers.calendar = setInterval(() => {
+  if (state.calendarNextTryMs && Date.now() < state.calendarNextTryMs) return;
+  api.fetchCalendar();
+}, CONFIG.CALENDAR.refreshMs);
 
         state.timers.clock = setInterval(() => {
           render.clock();
@@ -2441,6 +2738,10 @@ state.hsl = {
               state.hslNextTryMs = 0;
               api.fetchHsl();
             }
+            if (state.calendarStatus === "down" && state.calendarNextTryMs && now >= state.calendarNextTryMs){
+  state.calendarNextTryMs = 0;
+  api.fetchCalendar();
+}
           }
         }, 1000);
       },
@@ -2476,9 +2777,6 @@ state.hsl = {
         if (elecToday) elecToday.src = CONFIG.ELECTRICITY.embedToday;
         if (elecTomorrow) elecTomorrow.src = CONFIG.ELECTRICITY.embedTomorrow;
 
-        const cal = utils.el("iframeCal");
-        if (cal) cal.src = CONFIG.CALENDAR.embedUrl;
-
       }
     };
 
@@ -2495,11 +2793,13 @@ state.hsl = {
       render.clock();
       render.weather();
       render.hsl();
+      render.calendar();
       render.hslDetailed();
       render.statusBar();
 
       api.fetchWeather();
       api.fetchHsl();
+      api.fetchCalendar();
 
       scheduler.start();
     })();
