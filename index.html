@@ -1192,39 +1192,52 @@
       </section>
 
       <!-- PAGE 3: SCHOOL SCHEDULE (placeholder) -->
+            <!-- PAGE 3: SCHOOL SCHEDULE (Google Calendar embeds) -->
       <section class="page" id="page2" aria-label="School schedule">
-        <div class="schedule-layout">
-          <div class="card">
+        <div class="three-cols">
+
+          <!-- Sadia -->
+          <div class="card" id="cardSchoolSadia">
             <div class="hdr">
-              <h2>School schedule</h2>
-              <div class="sub">Placeholder (no integration yet)</div>
+              <h2>Sadia</h2>
+              <div class="sub">School schedule (embed)</div>
             </div>
             <div class="body">
-              <div class="center-msg">
-                <div>
-                  <b>Ready for future integration</b><br>
-                  <span class="muted">This page is intentionally a clean placeholder.</span>
-                </div>
+              <div class="iframe-wrap">
+                <iframe id="iframeSchoolSadia" title="Sadia school calendar"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
               </div>
             </div>
           </div>
 
-          <div class="card">
+          <!-- Nida -->
+          <div class="card" id="cardSchoolNida">
             <div class="hdr">
-              <h2>Today slots</h2>
-              <div class="sub">Empty slots</div>
+              <h2>Nida</h2>
+              <div class="sub">School schedule (embed)</div>
             </div>
             <div class="body">
-              <div class="slots">
-                <div class="slot"><div class="t">08:00</div><div class="e">—</div></div>
-                <div class="slot"><div class="t">10:00</div><div class="e">—</div></div>
-                <div class="slot"><div class="t">12:00</div><div class="e">—</div></div>
-                <div class="slot"><div class="t">14:00</div><div class="e">—</div></div>
-                <div class="slot"><div class="t">16:00</div><div class="e">—</div></div>
-                <div class="slot"><div class="t">18:00</div><div class="e">—</div></div>
+              <div class="iframe-wrap">
+                <iframe id="iframeSchoolNida" title="Nida school calendar"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
               </div>
             </div>
           </div>
+
+          <!-- Usharib -->
+          <div class="card" id="cardSchoolUsharib">
+            <div class="hdr">
+              <h2>Usharib</h2>
+              <div class="sub">School schedule (embed)</div>
+            </div>
+            <div class="body">
+              <div class="iframe-wrap">
+                <iframe id="iframeSchoolUsharib" title="Usharib school calendar"
+                        loading="lazy" referrerpolicy="no-referrer"></iframe>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1316,6 +1329,13 @@ ELECTRICITY: {
 
       CALENDAR: {
         embedUrl: "https://calendar.google.com/calendar/embed?src=np0k334u9q2aj93rdlpfeeuklo%40group.calendar.google.com&ctz=Europe%2FHelsinki&mode=AGENDA&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0"
+      },
+
+            SCHOOL: {
+        // You provided the same embed URL for all three children. Replace later if you have separate calendars.
+        sadiaEmbedUrl: "https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Europe%2FHelsinki&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA&src=NmJmZDY4NjgwOGM1ZWJjYzFhYzM5MDZmNzg3YjBkODA1ZDYyOTBiNDE1MjFmNmU0MThjZWQ2OTI5NmIwOTU3MEBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&color=%23fd9af6",
+        nidaEmbedUrl:  "https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Europe%2FHelsinki&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA&src=MzQzOTA0YzA0NmY3ZjUyNzc5ZDM3YjA5NzIyM2YyYTNiMjdlY2E1MmY3NzNkZWJjYzg5OTYxMzAzZmFhYjc4Y0Bncm91cC5jYWxlbmRhci5nb29nbGUuY29t&color=%230b8043",
+        usharibEmbedUrl:"https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Europe%2FHelsinki&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA&src=OTBkYWVlOTQ0NTJjYTEyYzlhYjVlNTg3ODI4NzY4N2E1OGM1NmU2MGIyYjczMzdhNTFjZTY2MDM5ZDRkOGZiOUBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&color=%234285f4"
       },
 
       IFRAME: {
@@ -2329,7 +2349,7 @@ state.hsl = {
      ***********************************************************************/
     const router = {
       init(){
-        state.pageCount = 2; // Only Today + Planning (others hidden)
+state.pageCount = 3; // Today + Planning + School
         router.buildDots();
         router.show(0, false);
 
@@ -2365,7 +2385,7 @@ state.hsl = {
         state.pageIndex = idx;
 
         // Visible pages mapping (only Today + Planning)
-        const visiblePages = [0, 1];
+        const visiblePages = [0, 1, 2];
 
         visiblePages.forEach((pageId, visIdx) => {
           const el = utils.el("page" + pageId);
@@ -2478,7 +2498,13 @@ state.hsl = {
 
         const cal = utils.el("iframeCal");
         if (cal) cal.src = CONFIG.CALENDAR.embedUrl;
-
+        // Page 3: School schedules (3 columns)
+        const schS = utils.el("iframeSchoolSadia");
+        const schN = utils.el("iframeSchoolNida");
+        const schU = utils.el("iframeSchoolUsharib");
+        if (schS) schS.src = CONFIG.SCHOOL.sadiaEmbedUrl;
+        if (schN) schN.src = CONFIG.SCHOOL.nidaEmbedUrl;
+        if (schU) schU.src = CONFIG.SCHOOL.usharibEmbedUrl;
       }
     };
 
