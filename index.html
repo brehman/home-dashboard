@@ -1380,17 +1380,8 @@ CALENDAR: {
 
   // Proxy fallbacks (tried in order)
   corsProxies: {
-    // + encodeURIComponent(url)
-    allOriginsRaw: "https://api.allorigins.win/raw?url=",
-
-    // + encodeURIComponent(url)
-    corsproxyIo: "https://corsproxy.io/?",
-
-    // + encodeURIComponent(url)
-    thingproxy: "https://thingproxy.freeboard.io/fetch/",
-
-    // + url WITHOUT protocol
-    jinaAI: "https://r.jina.ai/https://"
+    allOriginsRaw: "https://api.allorigins.win/raw?url=",  // + encodeURIComponent(url)
+    jinaAI: "https://r.jina.ai/https://"                   // + url WITHOUT protocol
   }
 },
 
@@ -1867,16 +1858,10 @@ async fetchCalendar(){
   const enc = encodeURIComponent(direct);
   const noProto = direct.replace(/^https?:\/\//, ""); // for jina
 
-  // If running on a hosted origin (http/https), Google ICS will almost always fail CORS.
-  // Put proxies first to avoid persistent failures; keep direct last as a fallback.
-  const proxies = CONFIG.CALENDAR.corsProxies || {};
-
   const candidates = [
-    (proxies.corsproxyIo || "https://corsproxy.io/?") + enc,
-    (proxies.thingproxy || "https://thingproxy.freeboard.io/fetch/") + enc,
-    (proxies.allOriginsRaw || "https://api.allorigins.win/raw?url=") + enc,
-    (proxies.jinaAI || "https://r.jina.ai/https://") + noProto,
-    direct
+    direct,
+    (CONFIG.CALENDAR.corsProxies?.allOriginsRaw || "https://api.allorigins.win/raw?url=") + enc,
+    (CONFIG.CALENDAR.corsProxies?.jinaAI || "https://r.jina.ai/https://") + noProto
   ];
 
   try{
@@ -1885,9 +1870,7 @@ async fetchCalendar(){
 
     for (const url of candidates){
       try{
-        const txt = await utils.fetchText(url, {
-          headers: { "Accept": "text/calendar, text/plain;q=0.9, */*;q=0.8" }
-        }, CONFIG.FETCH_TIMEOUT_MS);
+        const txt = await utils.fetchText(url, {}, CONFIG.FETCH_TIMEOUT_MS);
 
         // Basic validation that it's actually an ICS
         if (txt && txt.includes("BEGIN:VCALENDAR") && txt.includes("BEGIN:VEVENT")){
@@ -2048,10 +2031,7 @@ async fetchCalendar(){
   const age = state.calendar?.fetchedAtMs ? utils.ageLabel(state.calendar.fetchedAtMs) : "—";
 
   if (sub){
-    if (has){
-      const src = state.calendar?.source ? " · via proxy" : "";
-      utils.setText(sub, `Top 5 · updated ${age}${src}`);
-    }
+    if (has) utils.setText(sub, `Top 5 · updated ${age}`);
     else utils.setText(sub, state.calendarStatus === "down" ? "Calendar DOWN" : "Loading…");
   }
 
