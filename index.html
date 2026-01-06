@@ -757,8 +757,19 @@
 
     /* Iframes */
     /* Page 1 Calendar – agenda clarity */
+/* Page 1 Calendar – agenda clarity + slightly larger text (via scale) */
+#cardCal .iframe-wrap{ position:relative; overflow:hidden; }
+
 #cardCal iframe{
   filter: saturate(1.1) contrast(1.05);
+
+  /* “Zoom” the embed for TV readability */
+  transform: scale(1.10);
+  transform-origin: 0 0;
+
+  /* Keep it fitting inside the wrapper after scaling */
+  width: calc(100% / 1.10);
+  height: calc(100% / 1.10);
 }
     .iframe-wrap{
       height:100%;
@@ -1418,7 +1429,29 @@ ELECTRICITY: {
 
       // Clamp for numbers
       clamp(n, a, b){ return Math.min(b, Math.max(a, n)); },
+// Format a date as YYYYMMDD in the configured timezone (for Google Calendar embed ranges)
+ymdInTz(date){
+  try{
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: CONFIG.TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date);
 
+    const y = parts.find(p => p.type === "year")?.value;
+    const m = parts.find(p => p.type === "month")?.value;
+    const d = parts.find(p => p.type === "day")?.value;
+    if (!y || !m || !d) throw new Error("bad parts");
+    return `${y}${m}${d}`;
+  }catch{
+    // Fallback using local time
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,"0");
+    const d = String(date.getDate()).padStart(2,"0");
+    return `${y}${m}${d}`;
+  }
+},
       // Create a time formatter in the configured timezone
       fmtTime(date, opts){
         try{
@@ -2497,7 +2530,24 @@ state.pageCount = 3; // Today + Planning + School
         if (elecTomorrow) elecTomorrow.src = CONFIG.ELECTRICITY.embedTomorrow;
 
         const cal = utils.el("iframeCal");
-        if (cal) cal.src = CONFIG.CALENDAR.embedUrl;
+if (cal){
+  // Show only today + tomorrow using the embed date range.
+  // Google Calendar embed supports: &dates=YYYYMMDD/YYYYMMDD (end is exclusive).
+  const now = new Date();
+  const start = utils.ymdInTz(now);
+
+  // +2 days because end is exclusive → shows today + tomorrow
+  const endDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const end = utils.ymdInTz(endDate);
+
+  // Remove any existing dates=... then add fresh one
+  const base = CONFIG.CALENDAR.embedUrl
+    .replace(/([&?])dates=\d{8}\/\d{8}/, "$1")
+    .replace(/[&?]$/, "");
+
+  const join = base.includes("?") ? "&" : "?";
+  cal.src = `${base}${join}dates=${start}/${end}`;
+}
         // Page 3: School schedules (3 columns)
         const schS = utils.el("iframeSchoolSadia");
         const schN = utils.el("iframeSchoolNida");
