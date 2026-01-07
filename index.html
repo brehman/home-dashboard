@@ -1066,10 +1066,14 @@ html.lite.reduce-motion *{
   align-items:center;
   justify-content:center;
   text-align:center;
-  font-weight: 950;
-  letter-spacing: -0.6px;
-  line-height: 1.12;
-  text-shadow: 0 2px 10px rgba(0,0,0,.35);
+
+  /* Readable TV-friendly font stack (Calibri-like) */
+  font-family: Calibri, "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+
+  text-shadow: 0 1px 3px rgba(0,0,0,.35);
   white-space: pre-wrap;
   overflow:hidden;
 }
@@ -2302,7 +2306,7 @@ const quotes = {
     if (!boxW || !boxH) return;
 
     let lo = 22;
-    let hi = 160;
+    let hi = 96;   // cap max size so quotes never look oversized
     let best = lo;
 
     const fits = () => (el.scrollWidth <= boxW && el.scrollHeight <= boxH);
@@ -2321,6 +2325,10 @@ const quotes = {
           hi = mid - 1;
         }
       }
+    }
+    // Optional: slightly smaller default on Raspberry Pi Lite mode
+    if (document.documentElement.classList.contains("lite")){
+      best = Math.floor(best * 0.9);
     }
     el.style.fontSize = best + "px";
   };
