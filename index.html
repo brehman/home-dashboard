@@ -1050,6 +1050,29 @@ html.lite.reduce-motion *{
   animation: none !important;
   transition: none !important;
 }
+/* ===== Quotes page ===== */
+.quotesStage{
+  height:100%;
+  width:100%;
+  display:grid;
+  place-items:center;
+  padding: 38px;               /* decent margins */
+}
+
+.quoteText{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-weight: 950;
+  letter-spacing: -0.6px;
+  line-height: 1.12;
+  text-shadow: 0 2px 10px rgba(0,0,0,.35);
+  white-space: pre-wrap;
+  overflow:hidden;
+}
   </style>
 </head>
 
@@ -1313,6 +1336,20 @@ html.lite.reduce-motion *{
     </div>
   </div>
 </section>
+<!-- PAGE 5: QUOTES (full-screen text from quotes.txt) -->
+<section class="page" id="page4" aria-label="Quotes">
+  <div class="card" style="height:100%;">
+    <div class="hdr">
+      <h2>Quote</h2>
+      <div class="sub" id="quotesSub">Loading…</div>
+    </div>
+    <div class="body" style="height: calc(100% - 54px);">
+      <div id="quotesStage" class="quotesStage">
+        <div id="quoteText" class="quoteText">Loading…</div>
+      </div>
+    </div>
+  </div>
+</section>
 
     </div>
   </main>
@@ -1441,9 +1478,17 @@ if (CONFIG.PERF && typeof CONFIG.PERF.IFRAME_SCALE === "number"){
       hslBackoffMs: CONFIG.BACKOFF.START_MS,
       hslNextTryMs: 0,
 
+      // Quotes
+quotes: {
+  list: null,        // array of strings
+  index: 0,          // next quote index to show
+  fetchedAtMs: 0,
+  status: "init"     // init|ok|down
+},
+
       // Router
       pageIndex: 0,
-      pageCount: 4,
+      pageCount: 5,
       pausedUntilMs: 0,              // rotation paused until (manual nav), then auto resumes
 
       // Render throttling (avoid unnecessary DOM writes)
@@ -1612,6 +1657,8 @@ ymdInTz(date){
     const cache = {
       keys: {
         weather: "tvDash.weather.v1",
+        quotes: "tvDash.quotes.v1",
+quotesIndex: "tvDash.quotesIndex.v1",
         hsl: "tvDash.hsl.v1"
       },
 
@@ -1637,6 +1684,26 @@ ymdInTz(date){
             }
           }
         }catch(e){ /* ignore */ }
+
+        // Load cached quotes
+try{
+  const q = localStorage.getItem(cache.keys.quotes);
+  if (q){
+    const obj = JSON.parse(q);
+    if (obj && Array.isArray(obj.list)){
+      state.quotes.list = obj.list;
+      state.quotes.fetchedAtMs = obj.savedAtMs || 0;
+      state.quotes.status = "ok";
+    }
+  }
+}catch(e){ /* ignore */ }
+
+// Load last shown quote index
+try{
+  const qi = localStorage.getItem(cache.keys.quotesIndex);
+  const n = Number(qi);
+  if (Number.isFinite(n) && n >= 0) state.quotes.index = n;
+}catch(e){ /* ignore */ }
       },
 
       saveWeather(){
@@ -1648,6 +1715,22 @@ ymdInTz(date){
           }));
         }catch(e){ /* ignore quota */ }
       },
+
+      saveQuotes(){
+  try{
+    if (!Array.isArray(state.quotes.list)) return;
+    localStorage.setItem(cache.keys.quotes, JSON.stringify({
+      savedAtMs: Date.now(),
+      list: state.quotes.list
+    }));
+  }catch(e){ /* ignore */ }
+},
+
+saveQuotesIndex(){
+  try{
+    localStorage.setItem(cache.keys.quotesIndex, String(state.quotes.index || 0));
+  }catch(e){ /* ignore */ }
+},
 
       saveHsl(){
         try{
@@ -1747,6 +1830,51 @@ const data = {
           }
         `.trim();
       },
+
+      // Quotes: load from local quotes.txt (same folder)
+async fetchQuotes(){
+  try{
+    state.quotes.status = "init";
+
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), CONFIG.FETCH_TIMEOUT_MS);
+
+    // Cache-bust so updates to quotes.txt are picked up
+    const url = `quotes.txt?cb=${Date.now()}`;
+    const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+
+    clearTimeout(t);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const text = await res.text();
+
+    // Split by empty lines into quotes
+    const list = text
+      .replace(/\r\n/g, "\n")
+      .split(/\n\s*\n+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (!list.length) throw new Error("No quotes found");
+
+    state.quotes.list = list;
+    state.quotes.fetchedAtMs = Date.now();
+    state.quotes.status = "ok";
+
+    cache.saveQuotes();
+
+    // Clamp index into range
+    if (state.quotes.index >= list.length) state.quotes.index = 0;
+    cache.saveQuotesIndex();
+
+    render.quotes();
+
+  }catch(err){
+    state.quotes.status = "down";
+    // rely on cache if present
+    render.quotes();
+  }
+},
 
       async fetchHsl(){
         state.hslLastAttemptMs = Date.now();
@@ -1857,6 +1985,36 @@ state.hsl = {
         }
       }
     };
+
+    /***********************************************************************
+ * QUOTES (cycling logic)
+ ***********************************************************************/
+const quotes = {
+  ensureLoaded(){
+    if (!Array.isArray(state.quotes.list) || !state.quotes.list.length){
+      api.fetchQuotes(); // falls back to cache if offline
+    }
+  },
+
+  next(){
+    quotes.ensureLoaded();
+
+    if (!Array.isArray(state.quotes.list) || !state.quotes.list.length){
+      render.quotes();
+      return;
+    }
+
+    const n = state.quotes.list.length;
+    state.quotes.index = utils.clamp(state.quotes.index, 0, n - 1);
+
+    // Render current index
+    render.quotes();
+
+    // Move pointer to next for next visit
+    state.quotes.index = (state.quotes.index + 1) % n;
+    cache.saveQuotesIndex();
+  }
+};
 
     /***********************************************************************
      * RENDER (page render functions)
@@ -2105,6 +2263,73 @@ state.hsl = {
           </div>
         `);
       },
+
+      quotes(){
+  const sub = utils.el("quotesSub");
+  const stage = utils.el("quotesStage");
+  const el = utils.el("quoteText");
+  if (!sub || !stage || !el) return;
+
+  const has = Array.isArray(state.quotes.list) && state.quotes.list.length > 0;
+
+  const shownIndex = has
+    ? ((state.quotes.index - 1 + state.quotes.list.length) % state.quotes.list.length)  // last rendered
+    : 0;
+
+  const statusLine = has
+    ? `Quote ${shownIndex + 1} of ${state.quotes.list.length}`
+    : (state.quotes.status === "down" ? "Quotes unavailable (offline/cache)" : "Loading…");
+
+  utils.setText(sub, statusLine);
+
+  if (!has){
+    utils.setText(el, state.quotes.status === "down"
+      ? "No quotes loaded yet. Add quotes to quotes.txt (separate by empty line)."
+      : "Loading quotes…"
+    );
+    return;
+  }
+
+  // The text currently rendered by quotes.next() is already set in quoteText.
+  // If someone calls render.quotes() directly, show the previous index.
+  const quote = state.quotes.list[shownIndex] || state.quotes.list[0];
+  utils.setText(el, quote);
+
+  // Auto-fit font size (binary search)
+  const fit = () => {
+    const boxW = stage.clientWidth;
+    const boxH = stage.clientHeight;
+    if (!boxW || !boxH) return;
+
+    let lo = 22;
+    let hi = 160;
+    let best = lo;
+
+    const fits = () => (el.scrollWidth <= boxW && el.scrollHeight <= boxH);
+
+    el.style.fontSize = hi + "px";
+    if (fits()){
+      best = hi;
+    }else{
+      while (lo <= hi){
+        const mid = (lo + hi) >> 1;
+        el.style.fontSize = mid + "px";
+        if (fits()){
+          best = mid;
+          lo = mid + 1;
+        }else{
+          hi = mid - 1;
+        }
+      }
+    }
+    el.style.fontSize = best + "px";
+  };
+
+  requestAnimationFrame(() => {
+    fit();
+    requestAnimationFrame(fit);
+  });
+},
 
       hsl(){
         const sub = utils.el("hslSub");
@@ -2534,7 +2759,9 @@ state.hsl = {
      ***********************************************************************/
     const router = {
       init(){
-state.pageCount = 3; // Today + Planning + School
+        // Visible pages: Today (page0) + Planning (page1) + School (page2) + Quotes (page4)
+        router.visiblePages = [0, 1, 2, 4];
+        state.pageCount = router.visiblePages.length;
         router.buildDots();
         router.show(0, false);
 
@@ -2565,18 +2792,26 @@ state.pageCount = 3; // Today + Planning + School
         const dots = utils.qsa(".page-dot", utils.el("pageDots"));
         dots.forEach((d, i) => d.classList.toggle("active", i === state.pageIndex));
       },
+
+      
       show(i, manual=false){
         const idx = (i + state.pageCount) % state.pageCount;
         state.pageIndex = idx;
 
-        // Visible pages mapping (only Today + Planning)
-        const visiblePages = [0, 1, 2];
-
+        // Toggle active class only on visible pages
+        const visiblePages = router.visiblePages || [0, 1, 2, 4];
         visiblePages.forEach((pageId, visIdx) => {
           const el = utils.el("page" + pageId);
           if (el) el.classList.toggle("active", visIdx === idx);
         });
+
         router.updateDots();
+
+        // If Quotes page is now visible, advance to next quote
+        const activeId = "page" + visiblePages[idx];
+        if (activeId === "page4"){
+          quotes.next();
+        }
 
         if (manual){
           state.pausedUntilMs = Date.now() + 60 * 1000;
@@ -2747,6 +2982,7 @@ if (!state.timers.electricity){
 
       api.fetchWeather();
       api.fetchHsl();
+      api.fetchQuotes();
 
       scheduler.start();
     })();
