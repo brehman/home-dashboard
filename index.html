@@ -763,13 +763,11 @@
 #cardCal iframe{
   filter: saturate(1.1) contrast(1.05);
 
-  /* “Zoom” the embed for TV readability */
-  transform: scale(1.10);
+  /* Zoom controlled by CSS variable (Pi sets it to 1.0) */
+  transform: scale(var(--calScale, 1.10));
   transform-origin: 0 0;
-
-  /* Keep it fitting inside the wrapper after scaling */
-  width: calc(100% / 1.10);
-  height: calc(100% / 1.10);
+  width: calc(100% / var(--calScale, 1.10));
+  height: calc(100% / var(--calScale, 1.10));
 }
     .iframe-wrap{
       height:100%;
@@ -1005,6 +1003,46 @@
 .timeMeta,
 .wx-mini .s{
   color: rgba(248,250,252,.78);
+}
+
+/* =====================================================
+   PERF: Raspberry Pi 3 LITE MODE
+   - disables blur/backdrop-filter, overlays, and animations
+===================================================== */
+html.lite .bg-overlay,
+html.lite #condOverlay{ display:none !important; }
+
+html.lite header.status,
+html.lite .page-dots{
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.lite .card,
+html.lite .glass,
+html.lite .wx-mini,
+html.lite .wx-top,
+html.lite .hsl-row,
+html.lite .hsl-minsBig,
+html.lite .iframe-wrap,
+html.lite .timePill,
+html.lite .stopRow,
+html.lite .slot,
+html.lite .elec-crop{
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Simpler background (less blending) */
+html.lite body{
+  background: var(--bg) !important;
+}
+
+/* Reduce motion globally */
+html.lite.reduce-motion *{
+  animation: none !important;
+  transition: none !important;
 }
   </style>
 </head>
@@ -1280,20 +1318,30 @@
      * CONFIG (MUST BE EDITABLE + USED EVERYWHERE)
      ***********************************************************************/
     const CONFIG = {
-      ROTATION_MS: 15000,
+ROTATION_MS: 15000,
 
-      DATA_REFRESH: {
-        WEATHER_MS: 10 * 60 * 1000,
-        HSL_MS: 30 * 1000
-      },
+// Raspberry Pi 3: slower refresh + less network load
+DATA_REFRESH: {
+  WEATHER_MS: 15 * 60 * 1000,
+  HSL_MS: 60 * 1000
+},
 
-      FETCH_TIMEOUT_MS: 8000,
+// Raspberry Pi 3: shorter fetch timeout so UI doesn't hang on flaky Wi-Fi
+FETCH_TIMEOUT_MS: 6000,
 
-      BACKOFF: {
-        START_MS: 5000,
-        MULTIPLIER: 2,
-        MAX_MS: 5 * 60 * 1000
-      },
+// Raspberry Pi 3: start backoff higher and allow longer max backoff
+BACKOFF: {
+  START_MS: 15000,
+  MULTIPLIER: 2,
+  MAX_MS: 10 * 60 * 1000
+},
+
+// Raspberry Pi 3 performance switches
+PERF: {
+  LITE_MODE: true,          // disables expensive blur/overlays/animations via CSS
+  REDUCE_MOTION: true,      // disables most transitions/animations
+  IFRAME_SCALE: 1.0         // set 1.0 to avoid iframe scaling cost
+},
 
       TIMEZONE: "Europe/Helsinki",
 
@@ -1354,6 +1402,15 @@ ELECTRICITY: {
         allowPointerEvents: false
       }
     };
+
+    // ===== PERF: Raspberry Pi 3 Lite Mode (very early) =====
+if (CONFIG.PERF && CONFIG.PERF.LITE_MODE){
+  document.documentElement.classList.add("lite");
+  if (CONFIG.PERF.REDUCE_MOTION) document.documentElement.classList.add("reduce-motion");
+}
+if (CONFIG.PERF && typeof CONFIG.PERF.IFRAME_SCALE === "number"){
+  document.documentElement.style.setProperty("--calScale", String(CONFIG.PERF.IFRAME_SCALE));
+}
 
     /***********************************************************************
      * STATE (latest data + timestamps + statuses)
@@ -1616,6 +1673,14 @@ ymdInTz(date){
 
       async fetchWeather(){
         state.weatherLastAttemptMs = Date.now();
+        // Pi stability: if offline, don't hammer the API — rely on cache + status bar
+if (!state.online){
+  state.weatherStatus = state.weather ? state.weatherStatus : "down";
+  state.weatherNextTryMs = Date.now() + state.weatherBackoffMs;
+  render.weather();
+  render.statusBar();
+  return;
+}
         try{
           const json = await utils.fetchJSON(api.weatherUrl(), {}, CONFIG.FETCH_TIMEOUT_MS);
 
@@ -1679,6 +1744,15 @@ const data = {
 
       async fetchHsl(){
         state.hslLastAttemptMs = Date.now();
+        // Pi stability: if offline, don't hammer the API — rely on cache + status bar
+if (!state.online){
+  state.hslStatus = state.hsl ? state.hslStatus : "down";
+  state.hslNextTryMs = Date.now() + state.hslBackoffMs;
+  render.hsl();
+  render.hslDetailed();
+  render.statusBar();
+  return;
+}
         try{
           const stops = CONFIG.HSL.stops;
           const vars = {
@@ -2460,11 +2534,11 @@ state.pageCount = 3; // Today + Planning + School
       start(){
         scheduler.stop();
 
-        state.timers.clock = setInterval(() => {
-          render.clock();
-          const s = new Date().getSeconds();
-          if (s === 0) theme.apply();
-        }, 1000);
+// Pi performance: update clock less frequently (reduces reflow/repaint)
+state.timers.clock = setInterval(() => {
+  render.clock();
+  theme.apply();
+}, 15000);
 
         state.timers.rotation = setInterval(() => {
           if (Date.now() < state.pausedUntilMs) return;
