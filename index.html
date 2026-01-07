@@ -2629,6 +2629,25 @@ if (cal){
         if (schS) schS.src = CONFIG.SCHOOL.sadiaEmbedUrl;
         if (schN) schN.src = CONFIG.SCHOOL.nidaEmbedUrl;
         if (schU) schU.src = CONFIG.SCHOOL.usharibEmbedUrl;
+
+        // =====================================================
+// Electricity iframe auto-refresh (max every 30 minutes)
+// Prevents long-term caching on Raspberry Pi / Chromium
+// =====================================================
+if (!state.timers.electricity){
+  const elecIframe = utils.el("iframeElecHome");
+  const baseUrl = CONFIG.ELECTRICITY.homeEmbed || CONFIG.ELECTRICITY.homeUrl;
+
+  if (elecIframe && baseUrl){
+    // Initial load with cache-buster
+    elecIframe.src = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "cb=" + Date.now();
+
+    state.timers.electricity = setInterval(() => {
+      // Reassign src to force refresh
+      elecIframe.src = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "cb=" + Date.now();
+    }, 30 * 60 * 1000); // 30 minutes
+  }
+}
       }
     };
 
