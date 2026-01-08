@@ -1508,7 +1508,10 @@ quotes: {
         rotation: null,
         weather: null,
         hsl: null,
-        retryTick: null
+        retryTick: null,
+        elecHome: null,
+        elecToday: null,
+        elecTomorrow: null
       }
     };
 
@@ -2914,15 +2917,22 @@ state.timers.clock = setInterval(() => {
           document.head.appendChild(style);
         }
 
+        const setNoCacheSrc = (iframe, baseUrl) => {
+  if (!iframe || !baseUrl) return;
+  const u = new URL(baseUrl, window.location.href);
+  u.searchParams.set("cb", String(Date.now()));
+  iframe.src = u.toString();
+};
+
         const elecHome = utils.el("iframeElecHome");
         const elecLink = utils.el("elecLink");
-        if (elecHome) elecHome.src = CONFIG.ELECTRICITY.homeEmbed;
-        if (elecLink) elecLink.href = CONFIG.ELECTRICITY.homeUrl;
-
         const elecToday = utils.el("iframeElecToday");
         const elecTomorrow = utils.el("iframeElecTomorrow");
-        if (elecToday) elecToday.src = CONFIG.ELECTRICITY.embedToday;
-        if (elecTomorrow) elecTomorrow.src = CONFIG.ELECTRICITY.embedTomorrow;
+
+        // Link always points to the main site
+        if (elecLink) elecLink.href = CONFIG.ELECTRICITY.homeUrl;
+
+        // Initial load is handled below by the canonical no-cache refresh block
 
         const cal = utils.el("iframeCal");
 if (cal){
@@ -2951,23 +2961,35 @@ if (cal){
         if (schN) schN.src = CONFIG.SCHOOL.nidaEmbedUrl;
         if (schU) schU.src = CONFIG.SCHOOL.usharibEmbedUrl;
 
-        // =====================================================
-// Electricity iframe auto-refresh (max every 30 minutes)
-// Prevents long-term caching on Raspberry Pi / Chromium
+
+
 // =====================================================
-if (!state.timers.electricity){
-  const elecIframe = utils.el("iframeElecHome");
-  const baseUrl = CONFIG.ELECTRICITY.homeEmbed || CONFIG.ELECTRICITY.homeUrl;
+// Electricity iframes: hard cache-bust + periodic refresh
+// =====================================================
+// (elecHome/elecToday/elecTomorrow already declared above)
 
-  if (elecIframe && baseUrl){
-    // Initial load with cache-buster
-    elecIframe.src = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "cb=" + Date.now();
+const homeUrl = (CONFIG.ELECTRICITY.homeEmbed || CONFIG.ELECTRICITY.homeUrl);
+const every30m = 30 * 60 * 1000;
 
-    state.timers.electricity = setInterval(() => {
-      // Reassign src to force refresh
-      elecIframe.src = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "cb=" + Date.now();
-    }, 30 * 60 * 1000); // 30 minutes
-  }
+// Initial load
+setNoCacheSrc(elecHome, homeUrl);
+setNoCacheSrc(elecToday, CONFIG.ELECTRICITY.embedToday);
+setNoCacheSrc(elecTomorrow, CONFIG.ELECTRICITY.embedTomorrow);
+
+// Clear any prior intervals (safety if init() runs twice)
+if (state.timers.elecHome){ clearInterval(state.timers.elecHome); state.timers.elecHome = null; }
+if (state.timers.elecToday){ clearInterval(state.timers.elecToday); state.timers.elecToday = null; }
+if (state.timers.elecTomorrow){ clearInterval(state.timers.elecTomorrow); state.timers.elecTomorrow = null; }
+
+// Refresh at most every 30 minutes
+if (elecHome && homeUrl){
+  state.timers.elecHome = setInterval(() => setNoCacheSrc(elecHome, homeUrl), every30m);
+}
+if (elecToday && CONFIG.ELECTRICITY.embedToday){
+  state.timers.elecToday = setInterval(() => setNoCacheSrc(elecToday, CONFIG.ELECTRICITY.embedToday), every30m);
+}
+if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
+  state.timers.elecTomorrow = setInterval(() => setNoCacheSrc(elecTomorrow, CONFIG.ELECTRICITY.embedTomorrow), every30m);
 }
       }
     };
