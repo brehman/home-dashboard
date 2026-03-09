@@ -1052,30 +1052,104 @@ html.lite.reduce-motion *{
 }
 /* ===== Quotes page ===== */
 .quotesStage{
+  position:relative;
   height:100%;
   width:100%;
   display:grid;
   place-items:center;
-  padding: 38px;               /* decent margins */
+  padding: 44px;
+  overflow:hidden;
+  border-radius: 26px;
+  background:
+    radial-gradient(1200px 700px at 18% 14%, rgba(56,189,248,.14), transparent 60%),
+    radial-gradient(1000px 700px at 82% 18%, rgba(167,139,250,.14), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    linear-gradient(180deg, rgba(2,6,23,.26), rgba(2,6,23,.40));
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 60px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(14px) saturate(1.18);
+  -webkit-backdrop-filter: blur(14px) saturate(1.18);
+}
+
+/* Soft cinematic sheen */
+.quotesStage::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 380px at 20% 10%, rgba(255,255,255,.10), transparent 62%),
+    radial-gradient(800px 420px at 80% 18%, rgba(255,255,255,.05), transparent 62%),
+    linear-gradient(180deg, rgba(2,6,23,.08), rgba(2,6,23,.18));
+  z-index:0;
+}
+
+/* Decorative quotation marks */
+.quotesStage::after{
+  content:"“”";
+  position:absolute;
+  inset:18px 26px auto auto;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 110px;
+  line-height: 1;
+  letter-spacing: -8px;
+  color: rgba(255,255,255,.07);
+  z-index:0;
+  user-select:none;
 }
 
 .quoteText{
-  width:100%;
+  position:relative;
+  z-index:1;
+  width:min(100%, 1200px);
+  max-width: 100%;
   height:100%;
   display:flex;
   align-items:center;
   justify-content:center;
   text-align:center;
 
-  /* Readable TV-friendly font stack (Calibri-like) */
+  /* Readable, modern, motivational feel */
   font-family: Calibri, "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.2px;
-  line-height: 1.25;
-
-  text-shadow: 0 1px 3px rgba(0,0,0,.35);
+  line-height: 1.26;
+  color: rgba(248,250,252,.985);
+  text-shadow: 0 2px 10px rgba(0,0,0,.34);
   white-space: pre-wrap;
   overflow:hidden;
+}
+
+/* Inner content column feel without changing JS markup */
+#quoteText{
+  padding: 24px 28px;
+}
+
+/* Optional subtle accent line at the bottom */
+.quotesAccent{
+  position:absolute;
+  left:50%;
+  bottom:24px;
+  transform:translateX(-50%);
+  width:180px;
+  height:4px;
+  border-radius:999px;
+  background: linear-gradient(90deg, rgba(56,189,248,.10), rgba(56,189,248,.85), rgba(167,139,250,.90), rgba(167,139,250,.12));
+  box-shadow: 0 0 18px rgba(56,189,248,.22);
+  z-index:1;
+}
+
+/* Pi lite mode: remove expensive effects but keep design readable */
+html.lite .quotesStage{
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:none !important;
+}
+html.lite .quotesStage::before{
+  opacity:.7;
+}
+html.lite .quotesStage::after{
+  color: rgba(255,255,255,.05);
 }
   </style>
 </head>
@@ -1347,9 +1421,10 @@ html.lite.reduce-motion *{
       <h2>Quote</h2>
       <div class="sub" id="quotesSub">Loading…</div>
     </div>
-    <div class="body" style="height: calc(100% - 54px);">
+    <div class="body" style="height: calc(100% - 54px); padding: 10px 12px 14px 12px;">
       <div id="quotesStage" class="quotesStage">
         <div id="quoteText" class="quoteText">Loading…</div>
+        <div class="quotesAccent" aria-hidden="true"></div>
       </div>
     </div>
   </div>
@@ -2332,8 +2407,8 @@ const quotes = {
     const boxH = stage.clientHeight;
     if (!boxW || !boxH) return;
 
-    let lo = 22;
-    let hi = 96;   // cap max size so quotes never look oversized
+    let lo = 20;
+    let hi = 88;   // cap max size so quotes never look oversized
     let best = lo;
 
     const fits = () => (el.scrollWidth <= boxW && el.scrollHeight <= boxH);
