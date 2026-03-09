@@ -2795,7 +2795,7 @@ const quotes = {
     const router = {
       init(){
         // Visible pages: Today (page0) + Planning (page1) + School (page2) + Quotes (page4)
-        router.visiblePages = [0, 1, 2, 4];
+        router.visiblePages = [0, 1, 2, 4, 5];
         state.pageCount = router.visiblePages.length;
         router.buildDots();
         router.show(0, false);
@@ -2834,7 +2834,7 @@ const quotes = {
         state.pageIndex = idx;
 
         // Toggle active class only on visible pages
-        const visiblePages = router.visiblePages || [0, 1, 2, 4];
+        const visiblePages = router.visiblePages || [0, 1, 2, 4, 5];
         visiblePages.forEach((pageId, visIdx) => {
           const el = utils.el("page" + pageId);
           if (el) el.classList.toggle("active", visIdx === idx);
