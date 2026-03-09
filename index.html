@@ -1354,6 +1354,28 @@ html.lite.reduce-motion *{
     </div>
   </div>
 </section>
+<!-- PAGE 6: WELCOME IMAGE -->
+<section class="page" id="page5" aria-label="Welcome image">
+  <div class="card" style="height:100%;">
+    <div class="hdr">
+      <h2>Welcome</h2>
+      <div class="sub">Local image</div>
+    </div>
+
+    <div class="body"
+         style="height: calc(100% - 54px); display:flex; align-items:center; justify-content:center; padding:0;">
+      
+      <img src="welcome.jpg"
+           alt="Welcome"
+           style="
+             max-width:100%;
+             max-height:100%;
+             object-fit:contain;
+             border-radius:16px;
+           ">
+    </div>
+  </div>
+</section>
 
     </div>
   </main>
@@ -1492,7 +1514,7 @@ quotes: {
 
       // Router
       pageIndex: 0,
-      pageCount: 5,
+      pageCount: 6,
       pausedUntilMs: 0,              // rotation paused until (manual nav), then auto resumes
 
       // Render throttling (avoid unnecessary DOM writes)
