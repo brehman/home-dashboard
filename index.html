@@ -1940,6 +1940,11 @@ fmtElec(n){
   if (!Number.isFinite(n)) return "—";
   return `${(Math.round(n * 100) / 100).toFixed(2)}`;
 }
+,
+fmtElecCents(n){
+  if (!Number.isFinite(n)) return "—";
+  return `${(Math.round(n * 10000) / 100).toFixed(2)}`;
+}
     };
 
     /***********************************************************************
@@ -2094,15 +2099,24 @@ async fetchElectricity(){
     const json = await utils.fetchJSON(api.electricityUrl(), {}, CONFIG.FETCH_TIMEOUT_MS);
     if (!Array.isArray(json) || !json.length) throw new Error("Electricity API returned no data");
 
-    // Normalize defensively (API field names may vary)
+    // Official API shape uses EUR_per_kWh + ISO time_start/time_end.
+    // Keep fallback field names for safety, but prefer the documented structure.
     const items = json.map((row, i) => {
-      const hour = Number(
-        row.hour ?? row.tunti ?? row.H ?? row.index ?? i
-      );
+      const startISO = row.time_start || row.start || row.time || null;
+      let hour = null;
+      if (startISO){
+        const d = new Date(startISO);
+        if (Number.isFinite(d.getTime())) hour = d.getHours();
+      }
+      if (!Number.isFinite(hour)){
+        hour = Number(row.hour ?? row.tunti ?? row.H ?? row.index ?? i);
+      }
+
       const price = Number(
-        row.price ?? row.hinta ?? row.PriceWithTax ?? row.snt_kwh ?? row.cents ?? row.value
+        row.EUR_per_kWh ?? row.eur_per_kwh ?? row.price ?? row.hinta ?? row.PriceWithTax ?? row.snt_kwh ?? row.cents ?? row.value
       );
-      return { hour, price };
+
+      return { hour, price, time_start: startISO, time_end: row.time_end || null };
     }).filter(x => Number.isFinite(x.price));
 
     if (!items.length) throw new Error("Electricity API had no numeric prices");
@@ -2123,6 +2137,9 @@ async fetchElectricity(){
       current,
       low,
       high,
+      currentCents: Number.isFinite(current) ? current * 100 : null,
+      lowCents: Number.isFinite(low) ? low * 100 : null,
+      highCents: Number.isFinite(high) ? high * 100 : null,
       hourly: items,
       fetchedAtMs: Date.now()
     };
@@ -2485,7 +2502,7 @@ const elec = state.electricity;
     wd: wxHas ? state.weather.is_day : null,
     bus: bus ? [bus.routeShortName, bus.mins, bus.label] : null,
     train: train ? [train.routeShortName, train.mins, train.label] : null,
-    elec: elec ? [elec.current, elec.low, elec.high] : null
+    elec: elec ? [elec.currentCents, elec.lowCents, elec.highCents] : null
   });
   if (state.lastRenderKey.topTiles === key) return;
   state.lastRenderKey.topTiles = key;
@@ -2522,12 +2539,12 @@ const elec = state.electricity;
   }
 
 // Electricity (API-backed)
-if (elec && Number.isFinite(elec.current)){
-  utils.setText(eMain, `${utils.fmtElec(elec.current)}`);
-  utils.setText(eSub, `Low ${utils.fmtElec(elec.low)} · High ${utils.fmtElec(elec.high)}`);
-}else if (state.electricityStatus === "down" && state.electricity){
-  utils.setText(eMain, `${utils.fmtElec(state.electricity.current)}`);
-  utils.setText(eSub, `Low ${utils.fmtElec(state.electricity.low)} · High ${utils.fmtElec(state.electricity.high)} · cached`);
+if (elec && Number.isFinite(elec.currentCents)){
+  utils.setText(eMain, `${utils.fmtElecCents(elec.current)} c/kWh`);
+  utils.setText(eSub, `Low ${utils.fmtElecCents(elec.low)} · High ${utils.fmtElecCents(elec.high)}`);
+}else if (state.electricityStatus === "down" && state.electricity && Number.isFinite(state.electricity.currentCents)){
+  utils.setText(eMain, `${utils.fmtElecCents(state.electricity.current)} c/kWh`);
+  utils.setText(eSub, `Low ${utils.fmtElecCents(state.electricity.low)} · High ${utils.fmtElecCents(state.electricity.high)} · cached`);
 }else{
   utils.setText(eMain, "—");
   utils.setText(eSub, state.electricityStatus === "down" ? "Electricity offline / cached" : "Current · Low · High");
