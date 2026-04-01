@@ -32,6 +32,7 @@
       --shadow: 0 14px 40px rgba(0,0,0,.45);
 
       --statusH: 38px;
+      --topTilesH: 86px;
       --pad: 18px;
 
       --fadeMs: 380ms;
@@ -194,8 +195,7 @@
     /* Main viewport under status bar */
     main{
       position:fixed;
-      top:var(--statusH);
-      left:0; right:0; bottom:0;
+      top: calc(var(--statusH) + var(--topTilesH) + 10px);      left:0; right:0; bottom:0;
       padding: var(--pad);
     }
 
@@ -1024,6 +1024,115 @@ html.lite .page-dots{
   -webkit-backdrop-filter: none !important;
 }
 
+/* Persistent summary tiles bar (always visible) */
+.top-tiles{
+  position:fixed;
+  top: calc(var(--statusH) + 8px);
+  left: var(--pad);
+  right: var(--pad);
+  height: var(--topTilesH);
+  display:grid;
+  grid-template-columns: 1.15fr 1fr 1fr 1.2fr;
+  gap: 12px;
+  z-index:55;
+}
+
+.top-tile{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-width:0;
+  padding: 12px 16px;
+  border-radius: 18px;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)),
+    linear-gradient(180deg, rgba(2,6,23,.20), rgba(2,6,23,.32));
+  border:1px solid var(--glassStrokeSoft);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+}
+.top-tile::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(420px 200px at 20% 10%, rgba(255,255,255,.10), transparent 62%),
+    radial-gradient(320px 180px at 82% 18%, rgba(56,189,248,.08), transparent 60%);
+  opacity:.75;
+  z-index:0;
+}
+.top-tile > *{ position:relative; z-index:1; }
+
+.topTileLabel{
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+  color: rgba(248,250,252,.64);
+  margin-bottom: 4px;
+}
+.topTileMain{
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.7px;
+  color: rgba(248,250,252,.98);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.topTileSub{
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(248,250,252,.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topTileStack{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  flex:1 1 auto;
+}
+.topTileIcon{
+  width:48px;
+  height:48px;
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  border-radius: 14px;
+  border:1px solid rgba(148,163,184,.16);
+  background: rgba(15,23,42,.30);
+}
+.topTileIcon svg{
+  width: 38px;
+  height: 38px;
+  display:block;
+}
+
+html.lite .top-tile{
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:none !important;
+}
+
+@media (max-width: 1200px){
+  .top-tiles{
+    grid-template-columns: 1fr 1fr;
+    height:auto;
+  }
+  main{
+    top: calc(var(--statusH) + 2 * var(--topTilesH) + 26px);
+  }
+}
+
 html.lite .card,
 html.lite .glass,
 html.lite .wx-mini,
@@ -1198,6 +1307,41 @@ html.lite .quotesStage::after{
       <div class="paused" id="pausedIndicator">⏸ Paused</div>
     </div>
   </header>
+  <!-- Persistent summary tiles (always visible) -->
+<div class="top-tiles" id="topTiles" aria-label="Summary bar">
+  <div class="top-tile" id="tileWeather">
+    <div class="topTileIcon" id="tileWeatherIcon" aria-hidden="true"></div>
+    <div class="topTileStack">
+      <div class="topTileLabel">Weather</div>
+      <div class="topTileMain" id="tileWeatherMain">—</div>
+      <div class="topTileSub" id="tileWeatherSub">Loading…</div>
+    </div>
+  </div>
+
+  <div class="top-tile" id="tileBus">
+    <div class="topTileStack">
+      <div class="topTileLabel">Next bus</div>
+      <div class="topTileMain" id="tileBusMain">—</div>
+      <div class="topTileSub" id="tileBusSub">Loading…</div>
+    </div>
+  </div>
+
+  <div class="top-tile" id="tileTrain">
+    <div class="topTileStack">
+      <div class="topTileLabel">Next train</div>
+      <div class="topTileMain" id="tileTrainMain">—</div>
+      <div class="topTileSub" id="tileTrainSub">Loading…</div>
+    </div>
+  </div>
+
+  <div class="top-tile" id="tileElec">
+    <div class="topTileStack">
+      <div class="topTileLabel">Electricity price</div>
+      <div class="topTileMain" id="tileElecMain">—</div>
+      <div class="topTileSub" id="tileElecSub">Current · Low · High</div>
+    </div>
+  </div>
+</div>
 
   <main>
     <div class="pages" id="pages">
@@ -1530,7 +1674,8 @@ ELECTRICITY: {
   embedToday: "https://www.sahkonhintatanaan.fi?mode=embed&layout=minimal&hide-examples=1&zoom=1.2&background=ffffff",
   embedTomorrow: "https://www.sahkonhintatanaan.fi/huomenna?mode=embed&layout=minimal&hide-examples=1&zoom=1.2&background=ffffff",
   homeUrl: "https://www.sahkonhintatanaan.fi",
-  homeEmbed: "https://www.sahkonhintatanaan.fi?mode=embed&layout=minimal&hide-examples=1&zoom=1.8&background=ffffff"
+  homeEmbed: "https://www.sahkonhintatanaan.fi?mode=embed&layout=minimal&hide-examples=1&zoom=1.8&background=ffffff",
+  apiBase: "https://www.sahkonhintatanaan.fi/api/v1/prices"
 },
 
       CALENDAR: {
@@ -1582,6 +1727,14 @@ if (CONFIG.PERF && typeof CONFIG.PERF.IFRAME_SCALE === "number"){
       hslBackoffMs: CONFIG.BACKOFF.START_MS,
       hslNextTryMs: 0,
 
+      // Electricity prices (API-backed, for persistent top tile)
+electricity: null,             // { current, low, high, fetchedAtMs, hourly: [...] }
+electricityStatus: "init",
+electricityLastSuccessMs: 0,
+electricityLastAttemptMs: 0,
+electricityBackoffMs: CONFIG.BACKOFF.START_MS,
+electricityNextTryMs: 0,
+
       // Quotes
 quotes: {
   list: null,        // array of strings
@@ -1596,11 +1749,12 @@ quotes: {
       pausedUntilMs: 0,              // rotation paused until (manual nav), then auto resumes
 
       // Render throttling (avoid unnecessary DOM writes)
-      lastRenderKey: {
-        status: "",
-        weather: "",
-        hsl: ""
-      },
+lastRenderKey: {
+  status: "",
+  weather: "",
+  hsl: "",
+  topTiles: ""
+},
 
       // Scheduler safety: track intervals/timeouts to avoid duplicates
       timers: {
@@ -1613,7 +1767,8 @@ quotes: {
         elecToday: null,
         elecTomorrow: null,
           elecHourTimeout: null,
-  elecHour: null
+  elecHour: null,
+  electricity: null
       }
     };
 
@@ -1667,6 +1822,20 @@ ymdInTz(date){
     const m = String(date.getMonth()+1).padStart(2,"0");
     const d = String(date.getDate()).padStart(2,"0");
     return `${y}${m}${d}`;
+  }
+},
+
+hourInTz(date){
+  try{
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: CONFIG.TIMEZONE,
+      hour: "2-digit",
+      hour12: false
+    }).formatToParts(date);
+    const h = parts.find(p => p.type === "hour")?.value;
+    return Number(h);
+  }catch{
+    return date.getHours();
   }
 },
       // Create a time formatter in the configured timezone
@@ -1758,6 +1927,20 @@ ymdInTz(date){
       formatTemplate(tpl, vars){
         return tpl.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ""));
       }
+      ,
+// Try to extract electricity numbers from iframe text if same-origin access is allowed
+parseElecNumbers(text){
+  const src = String(text || "").replace(/\s+/g, " ");
+  const nums = [...src.matchAll(/(\d+[.,]\d+|\d+)/g)]
+    .map(m => Number(String(m[1]).replace(",", ".")))
+    .filter(n => Number.isFinite(n));
+  return nums;
+},
+
+fmtElec(n){
+  if (!Number.isFinite(n)) return "—";
+  return `${(Math.round(n * 100) / 100).toFixed(2)}`;
+}
     };
 
     /***********************************************************************
@@ -1765,11 +1948,12 @@ ymdInTz(date){
      ***********************************************************************/
     const cache = {
       keys: {
-        weather: "tvDash.weather.v1",
-        quotes: "tvDash.quotes.v1",
-quotesIndex: "tvDash.quotesIndex.v1",
-        hsl: "tvDash.hsl.v1"
-      },
+  weather: "tvDash.weather.v1",
+  quotes: "tvDash.quotes.v1",
+  quotesIndex: "tvDash.quotesIndex.v1",
+  hsl: "tvDash.hsl.v1",
+  electricity: "tvDash.electricity.v1"
+},
 
       load(){
         // Load cached weather
@@ -1793,6 +1977,16 @@ quotesIndex: "tvDash.quotesIndex.v1",
             }
           }
         }catch(e){ /* ignore */ }
+// Load cached electricity prices
+try{
+  const e = localStorage.getItem(cache.keys.electricity);
+  if (e){
+    const obj = JSON.parse(e);
+    if (obj && obj.data && obj.savedAtMs){
+      state.electricity = obj.data;
+    }
+  }
+}catch(err){ /* ignore */ }
 
         // Load cached quotes
 try{
@@ -1814,6 +2008,16 @@ try{
   if (Number.isFinite(n) && n >= 0) state.quotes.index = n;
 }catch(e){ /* ignore */ }
       },
+
+      saveElectricity(){
+  try{
+    if (!state.electricity) return;
+    localStorage.setItem(cache.keys.electricity, JSON.stringify({
+      savedAtMs: Date.now(),
+      data: state.electricity
+    }));
+  }catch(e){ /* ignore */ }
+},
 
       saveWeather(){
         try{
@@ -1868,6 +2072,76 @@ saveQuotesIndex(){
        `&forecast_days=1`+
        `&timezone=${tz}&cb=${cb}`;
       },
+
+      electricityUrl(date = new Date()){
+  const ymd = utils.ymdInTz(date);   // YYYYMMDD
+  const year = ymd.slice(0, 4);
+  const month = ymd.slice(4, 6);
+  const day = ymd.slice(6, 8);
+  return `${CONFIG.ELECTRICITY.apiBase}/${year}/${month}-${day}.json?cb=${Date.now()}`;
+},
+
+async fetchElectricity(){
+  state.electricityLastAttemptMs = Date.now();
+
+  if (!state.online){
+    state.electricityStatus = state.electricity ? state.electricityStatus : "down";
+    state.electricityNextTryMs = Date.now() + state.electricityBackoffMs;
+    render.topTiles();
+    return;
+  }
+
+  try{
+    const json = await utils.fetchJSON(api.electricityUrl(), {}, CONFIG.FETCH_TIMEOUT_MS);
+    if (!Array.isArray(json) || !json.length) throw new Error("Electricity API returned no data");
+
+    // Normalize defensively (API field names may vary)
+    const items = json.map((row, i) => {
+      const hour = Number(
+        row.hour ?? row.tunti ?? row.H ?? row.index ?? i
+      );
+      const price = Number(
+        row.price ?? row.hinta ?? row.PriceWithTax ?? row.snt_kwh ?? row.cents ?? row.value
+      );
+      return { hour, price };
+    }).filter(x => Number.isFinite(x.price));
+
+    if (!items.length) throw new Error("Electricity API had no numeric prices");
+
+    const low = Math.min(...items.map(x => x.price));
+    const high = Math.max(...items.map(x => x.price));
+    const nowHour = utils.hourInTz(new Date());
+
+    // Prefer exact current hour, fallback safely
+    const currentItem =
+      items.find(x => x.hour === nowHour) ||
+      items.find(x => x.hour === (nowHour - 1)) ||
+      items[0];
+
+    const current = currentItem ? currentItem.price : null;
+
+    state.electricity = {
+      current,
+      low,
+      high,
+      hourly: items,
+      fetchedAtMs: Date.now()
+    };
+    state.electricityStatus = "ok";
+    state.electricityLastSuccessMs = Date.now();
+    state.electricityBackoffMs = CONFIG.BACKOFF.START_MS;
+    state.electricityNextTryMs = 0;
+
+    cache.saveElectricity();
+    render.topTiles();
+
+  }catch(err){
+    state.electricityStatus = "down";
+    state.electricityBackoffMs = utils.nextBackoff(state.electricityBackoffMs);
+    state.electricityNextTryMs = Date.now() + state.electricityBackoffMs;
+    render.topTiles();
+  }
+},
 
       async fetchWeather(){
         state.weatherLastAttemptMs = Date.now();
@@ -2174,7 +2448,93 @@ const quotes = {
         const clockEl = utils.el("clockText");
         const html = `<span>${day}, ${date}</span> · <b style="font-size:16px; letter-spacing:.2px;">${time}</b>`;
         utils.setHTML(clockEl, html);
+        render.topTiles();
       },
+
+      topTiles(){
+  const wMain = utils.el("tileWeatherMain");
+  const wSub  = utils.el("tileWeatherSub");
+  const wIcon = utils.el("tileWeatherIcon");
+  const bMain = utils.el("tileBusMain");
+  const bSub  = utils.el("tileBusSub");
+  const tMain = utils.el("tileTrainMain");
+  const tSub  = utils.el("tileTrainSub");
+  const eMain = utils.el("tileElecMain");
+  const eSub  = utils.el("tileElecSub");
+
+  const wxHas = !!state.weather;
+  const hslHas = !!state.hsl && Array.isArray(state.hsl.perStop);
+
+  // Next bus from the page 1 list = first bus-like stop
+  const bus = hslHas
+    ? state.hsl.perStop.find(x =>
+        String(x.label || "").toLowerCase().includes("kavallinmäki") ||
+        String(x.label || "").toLowerCase().includes("viherlaaksontori"))
+    : null;
+
+  // Next train from the page 1 list = first Helsinki-bound train
+  const train = hslHas
+    ? state.hsl.perStop.find(x =>
+        String(x.label || "").toLowerCase().includes("helsinki"))
+    : null;
+
+const elec = state.electricity;
+  const key = JSON.stringify({
+    wt: wxHas ? state.weather.temperature_2m : null,
+    wf: wxHas ? state.weather.apparent_temperature : null,
+    wc: wxHas ? state.weather.weather_code : null,
+    wd: wxHas ? state.weather.is_day : null,
+    bus: bus ? [bus.routeShortName, bus.mins, bus.label] : null,
+    train: train ? [train.routeShortName, train.mins, train.label] : null,
+    elec: elec ? [elec.current, elec.low, elec.high] : null
+  });
+  if (state.lastRenderKey.topTiles === key) return;
+  state.lastRenderKey.topTiles = key;
+
+  // Weather
+  if (wxHas){
+    const temp = Number.isFinite(state.weather.temperature_2m) ? `${Math.round(state.weather.temperature_2m)}°` : "—";
+    const feels = Number.isFinite(state.weather.apparent_temperature) ? `${Math.round(state.weather.apparent_temperature)}°` : "—";
+    utils.setText(wMain, temp);
+    utils.setText(wSub, `Feels like ${feels}`);
+    utils.setHTML(wIcon, theme.conditionIcon(theme.weatherCodeToCondition(state.weather.weather_code), state.weather.is_day));
+  }else{
+    utils.setText(wMain, "—");
+    utils.setText(wSub, state.weatherStatus === "down" ? "Offline / cached" : "Loading…");
+    utils.setHTML(wIcon, theme.conditionIcon("cloudy", 1));
+  }
+
+  // Bus
+  if (bus && bus.routeShortName != null && typeof bus.mins === "number"){
+    utils.setText(bMain, `${bus.routeShortName} in ${bus.mins} mins`);
+    utils.setText(bSub, bus.label || "Next bus");
+  }else{
+    utils.setText(bMain, "—");
+    utils.setText(bSub, hslHas ? "No bus found" : "Loading…");
+  }
+
+  // Train
+  if (train && train.routeShortName != null && typeof train.mins === "number"){
+    utils.setText(tMain, `${train.routeShortName} in ${train.mins} mins`);
+    utils.setText(tSub, train.label || "Next train");
+  }else{
+    utils.setText(tMain, "—");
+    utils.setText(tSub, hslHas ? "No train found" : "Loading…");
+  }
+
+// Electricity (API-backed)
+if (elec && Number.isFinite(elec.current)){
+  utils.setText(eMain, `${utils.fmtElec(elec.current)}`);
+  utils.setText(eSub, `Low ${utils.fmtElec(elec.low)} · High ${utils.fmtElec(elec.high)}`);
+}else if (state.electricityStatus === "down" && state.electricity){
+  utils.setText(eMain, `${utils.fmtElec(state.electricity.current)}`);
+  utils.setText(eSub, `Low ${utils.fmtElec(state.electricity.low)} · High ${utils.fmtElec(state.electricity.high)} · cached`);
+}else{
+  utils.setText(eMain, "—");
+  utils.setText(eSub, state.electricityStatus === "down" ? "Electricity offline / cached" : "Current · Low · High");
+}
+
+},
 
       weather(){
         const sub = utils.el("wxSub");
@@ -2223,6 +2583,7 @@ const quotes = {
               </div>
             </div>
           `);
+          render.topTiles();
           return;
         }
 
@@ -2371,6 +2732,7 @@ const quotes = {
             </div>
           </div>
         `);
+        render.topTiles();
       },
 
       quotes(){
@@ -2985,6 +3347,11 @@ state.timers.clock = setInterval(() => {
           const now = Date.now();
           render.statusBar();
 
+          if (state.electricityStatus === "down" && state.electricityNextTryMs && now >= state.electricityNextTryMs){
+  state.electricityNextTryMs = 0;
+  api.fetchElectricity();
+}
+
           if (state.online){
             if (state.weatherStatus === "down" && state.weatherNextTryMs && now >= state.weatherNextTryMs){
               state.weatherNextTryMs = 0;
@@ -2994,6 +3361,10 @@ state.timers.clock = setInterval(() => {
               state.hslNextTryMs = 0;
               api.fetchHsl();
             }
+            // Electricity: refresh every 15 minutes
+state.timers.electricity = setInterval(() => {
+  api.fetchElectricity();
+}, 15 * 60 * 1000);
           }
         }, 1000);
       },
@@ -3093,7 +3464,28 @@ if (elecToday && CONFIG.ELECTRICITY.embedToday){
 if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
   state.timers.elecTomorrow = setInterval(() => setNoCacheSrc(elecTomorrow, CONFIG.ELECTRICITY.embedTomorrow), every30m);
 }
-      }
+      },
+
+      readElectricitySummary(){
+  // Best-effort only. Cross-origin iframes usually block access; then we show placeholders.
+  try{
+    const f = utils.el("iframeElecHome");
+    const doc = f && f.contentDocument ? f.contentDocument : null;
+    if (!doc || !doc.body) return null;
+
+    const txt = doc.body.innerText || doc.body.textContent || "";
+    const nums = utils.parseElecNumbers(txt);
+    if (!nums.length) return null;
+
+    // Heuristic: first number = current, min/max from all extracted numbers
+    const current = nums[0];
+    const low = Math.min(...nums);
+    const high = Math.max(...nums);
+    return { current, low, high };
+  }catch(e){
+    return null;
+  }
+},
     };
 
     /***********************************************************************
@@ -3107,6 +3499,7 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
       iframes.init();
 
       render.clock();
+      render.topTiles();
       render.weather();
       render.hsl();
       render.hslDetailed();
@@ -3115,7 +3508,7 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
       api.fetchWeather();
       api.fetchHsl();
       api.fetchQuotes();
-
+api.fetchElectricity();
       scheduler.start();
     })();
   </script>
