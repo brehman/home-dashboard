@@ -1037,23 +1037,22 @@ html.lite .page-dots{
   z-index:55;
 }
 
-.top-tile{
-  position:relative;
-  display:flex;
-  align-items:center;
-  gap:14px;
-  min-width:0;
-  padding: 12px 16px;
-  border-radius: 18px;
-  overflow:hidden;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)),
-    linear-gradient(180deg, rgba(2,6,23,.20), rgba(2,6,23,.32));
-  border:1px solid var(--glassStrokeSoft);
-  box-shadow: 0 10px 30px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-}
+  .top-tile{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    min-width:0;
+    padding: 12px 16px;
+    border-radius: 18px;
+    overflow:hidden;
+    background:
+      linear-gradient(135deg, rgba(56,189,248,.85), rgba(167,139,250,.85));
+    border:1px solid rgba(255,255,255,.35);
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  }
 .top-tile::after{
   content:"";
   position:absolute;
@@ -1067,14 +1066,14 @@ html.lite .page-dots{
 }
 .top-tile > *{ position:relative; z-index:1; }
 
-.topTileLabel{
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: .55px;
-  text-transform: uppercase;
-  color: rgba(248,250,252,.64);
-  margin-bottom: 4px;
-}
+  .topTileLabel{
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .55px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.85);
+    margin-bottom: 4px;
+  }
 .topTileMain{
   font-size: 28px;
   line-height: 1;
@@ -1086,14 +1085,14 @@ html.lite .page-dots{
   text-overflow: ellipsis;
   text-shadow: 0 1px 2px rgba(0,0,0,.35);
 }
-.topTileSub{
-  font-size: 14px;
-  font-weight: 800;
-  color: rgba(248,250,252,.78);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .topTileSub{
+    font-size: 14px;
+    font-weight: 800;
+    color: rgba(255,255,255,.92);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 .topTileStack{
   min-width:0;
   display:flex;
