@@ -2133,6 +2133,17 @@ async fetchElectricity(){
 
     const current = currentItem ? currentItem.price : null;
 
+    const currentStart = currentItem?.time_start || null;
+    const currentEnd = currentItem?.time_end || null;
+
+    function formatHour(iso){
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (!Number.isFinite(d.getTime())) return null;
+      const h = String(d.getHours()).padStart(2,"0");
+      return `${h}:00`;
+    }
+
     state.electricity = {
       current,
       low,
@@ -2140,6 +2151,8 @@ async fetchElectricity(){
       currentCents: Number.isFinite(current) ? current * 100 : null,
       lowCents: Number.isFinite(low) ? low * 100 : null,
       highCents: Number.isFinite(high) ? high * 100 : null,
+      currentStartLabel: formatHour(currentStart),
+      currentEndLabel: formatHour(currentEnd),
       hourly: items,
       fetchedAtMs: Date.now()
     };
@@ -2540,11 +2553,19 @@ const elec = state.electricity;
 
 // Electricity (API-backed)
 if (elec && Number.isFinite(elec.currentCents)){
+  const slot = (elec.currentStartLabel && elec.currentEndLabel)
+    ? `${elec.currentStartLabel} - ${elec.currentEndLabel}`
+    : "";
+
   utils.setText(eMain, `${utils.fmtElecCents(elec.current)} c/kWh`);
-  utils.setText(eSub, `Low ${utils.fmtElecCents(elec.low)} · High ${utils.fmtElecCents(elec.high)}`);
+  utils.setText(eSub, `${slot} · Low ${utils.fmtElecCents(elec.low)} · High ${utils.fmtElecCents(elec.high)}`);
 }else if (state.electricityStatus === "down" && state.electricity && Number.isFinite(state.electricity.currentCents)){
   utils.setText(eMain, `${utils.fmtElecCents(state.electricity.current)} c/kWh`);
-  utils.setText(eSub, `Low ${utils.fmtElecCents(state.electricity.low)} · High ${utils.fmtElecCents(state.electricity.high)} · cached`);
+  const slot = (state.electricity.currentStartLabel && state.electricity.currentEndLabel)
+    ? `${state.electricity.currentStartLabel} - ${state.electricity.currentEndLabel}`
+    : "";
+
+  utils.setText(eSub, `${slot} · Low ${utils.fmtElecCents(state.electricity.low)} · High ${utils.fmtElecCents(state.electricity.high)} · cached`);
 }else{
   utils.setText(eMain, "—");
   utils.setText(eSub, state.electricityStatus === "down" ? "Electricity offline / cached" : "Current · Low · High");
