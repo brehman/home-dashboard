@@ -267,6 +267,51 @@
   overflow:hidden;
 }
 
+    /* PAGE 0 (Today) — bolder redesign: warm accent palette and pronounced shapes */
+    #page0{ position:relative; }
+    #page0::before{
+      content: "";
+      position:absolute; left: -60px; top: 120px;
+      width:720px; height:720px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,122,89,.16), rgba(255,216,107,.06) 40%, transparent 60%);
+      filter: blur(80px);
+      z-index:0; pointer-events:none;
+    }
+
+    #page0 .grid-2x2{ grid-template-columns: 1.1fr 0.9fr; gap:22px; }
+
+    /* Strong, soft cards with warm glow */
+    #page0 .card{
+      border-radius: 32px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), linear-gradient(120deg, rgba(255,122,89,.06), rgba(255,216,107,.03));
+      border: none;
+      box-shadow: 0 30px 80px rgba(2,6,23,.6);
+      overflow:visible; position:relative;
+    }
+
+    /* Hide small ribbon, use larger decorative blob instead */
+    #page0 .card .hdr::before{ display:none; }
+    #page0 .card .hdr{ padding:18px 20px 12px 20px; }
+
+    /* Decorative blob behind weather card */
+    #cardWeather{ overflow:visible; }
+    #cardWeather::before{ content:""; position:absolute; right:-80px; top:-60px; width:360px; height:360px; border-radius:50%; background: conic-gradient(from 180deg at 50% 50%, rgba(255,122,89,.18), rgba(255,216,107,.12)); filter: blur(30px); z-index:0; pointer-events:none; }
+
+    #cardWeather .wx-top{ background: linear-gradient(135deg, rgba(255,255,255,.02), rgba(255,255,255,.01)); padding:26px; border-radius:20px; position:relative; z-index:1; }
+    #cardWeather .wx-now .temp{ font-size:96px; color:#FF7A59; text-shadow:none; }
+
+    /* HSL large minutes pill — high contrast */
+    #cardHsl .hsl-minsBig{ background: linear-gradient(90deg, #FF7A59, #FFB36B); color:#fff; border:none; box-shadow:0 10px 30px rgba(255,122,89,.12); }
+    #cardHsl .hsl-row.soon .hsl-minsBig{ box-shadow:0 12px 36px rgba(34,197,94,.14); border-color:rgba(34,197,94,.45); }
+
+    /* Top tiles: warm, vivid accents */
+    .top-tiles .top-tile{ background: linear-gradient(90deg,#FF7A59,#FFB36B); border-radius:16px; border:0; box-shadow:0 12px 30px rgba(0,0,0,.45); }
+    .top-tiles .topTileIcon{ background: rgba(255,255,255,.06); border-radius:12px; }
+
+    /* Calendar / Electricity card body spacing */
+    #cardCal .body, #cardElec .body{ padding:18px; }
+
+
 .card::before{
   content:"";
   position:absolute;
@@ -1236,7 +1281,7 @@ html.lite.reduce-motion *{
   padding: 24px 28px;
 }
 
-/* Optional subtle accent line at the bottom */
+  /* Optional subtle accent line at the bottom */
 .quotesAccent{
   position:absolute;
   left:50%;
@@ -1249,6 +1294,11 @@ html.lite.reduce-motion *{
   box-shadow: 0 0 20px rgba(56,189,248,.20), 0 0 26px rgba(167,139,250,.14);
   z-index:1;
 }
+
+  /* Welcome carousel (crossfade) */
+  .welcome-carousel{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .welcome-carousel img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; border-radius:16px; transition: opacity 900ms ease; opacity:0; }
+  .welcome-carousel img.active{ opacity:1; }
 
 /* Pi lite mode: remove expensive effects but keep design readable */
 html.lite .quotesStage{
@@ -1494,8 +1544,8 @@ html.lite .quotesStage::after{
       </section>
 
       <!-- PAGE 3: SCHOOL SCHEDULE (placeholder) -->
-            <!-- PAGE 3: SCHOOL SCHEDULE (Google Calendar embeds) -->
-      <section class="page" id="page2" aria-label="School schedule">
+        <!-- PAGE 3: SCHOOL SCHEDULE (Google Calendar embeds) -->
+      <section class="page" id="page2" aria-label="School schedule" style="display:none;">
         <div class="three-cols">
 
           <!-- Sadia -->
@@ -1561,7 +1611,7 @@ html.lite .quotesStage::after{
   </div>
 </section>
 <!-- PAGE 5: QUOTES (full-screen text from quotes.txt) -->
-<section class="page" id="page4" aria-label="Quotes">
+<section class="page" id="page4" aria-label="Quotes" style="display:none;">
   <div class="card" style="height:100%;">
     <div class="hdr">
       <h2>Quote</h2>
@@ -1586,8 +1636,50 @@ html.lite .quotesStage::after{
     <div class="body"
          style="height: calc(100% - 54px); display:flex; align-items:center; justify-content:center; padding:0;">
       
-      <img src="welcome.jpg"
-           alt="Welcome"
+      <div class="welcome-carousel" id="welcomeCarousel" aria-hidden="true">
+        <img id="welcomeImgA" src="welcome.jpg" alt="Welcome A" class="active">
+        <img id="welcomeImgB" src="" alt="Welcome B">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 7: Nida's schedule image -->
+<section class="page" id="page6" aria-label="Nida's schedule">
+  <div class="card" style="height:100%;">
+    <div class="hdr">
+      <h2>Nida's School Schedule</h2>
+      <div class="sub">Image schedule (feb-mar.png / apr-may.png etc.)</div>
+    </div>
+
+    <div class="body"
+         style="height: calc(100% - 54px); display:flex; align-items:center; justify-content:center; padding:0;">
+      
+      <img src="ns.jpg"
+           alt="NS schedule"
+           style="
+             max-width:100%;
+             max-height:100%;
+             object-fit:contain;
+             border-radius:16px;
+           ">
+    </div>
+  </div>
+</section>
+
+<!-- PAGE 8: Sadia's schedule image -->
+<section class="page" id="page7" aria-label="Sadia's schedule">
+  <div class="card" style="height:100%;">
+    <div class="hdr">
+      <h2>Sadia's School Schedule</h2>
+      <div class="sub">Image schedule (feb-mar.png / apr-may.png etc.)</div>
+    </div>
+
+    <div class="body"
+         style="height: calc(100% - 54px); display:flex; align-items:center; justify-content:center; padding:0;">
+      
+      <img src="ss.jpg"
+           alt="SS schedule"
            style="
              max-width:100%;
              max-height:100%;
@@ -3210,6 +3302,32 @@ if (elec && Number.isFinite(elec.currentCents)){
         document.documentElement.style.setProperty("--accent", accent);
         document.documentElement.style.setProperty("--accent2", accent2);
       },
+      applySeasonal(){
+        // Set palette based on month in CONFIG.TIMEZONE
+        try{
+          const now = new Date();
+          const parts = new Intl.DateTimeFormat("en-GB", { timeZone: CONFIG.TIMEZONE, month: '2-digit' }).formatToParts(now);
+          const m = Number(parts.find(p => p.type === 'month')?.value || (now.getMonth()+1));
+          let accent = '#38BDF8';
+          let accent2 = '#A78BFA';
+          // Seasons: Winter(Dec/Jan/Feb)=blue, Spring(Mar/Apr/May)=yellow, Summer(Jun/Jul/Aug)=green, Autumn(Sep/Oct/Nov)=orange
+          if ([12,1,2].includes(m)){
+            accent = '#3B82F6'; // blue
+            accent2 = '#60A5FA';
+          } else if ([3,4,5].includes(m)){
+            accent = '#FACC15'; // yellow
+            accent2 = '#FDE68A';
+          } else if ([6,7,8].includes(m)){
+            accent = '#16A34A'; // green
+            accent2 = '#86EFAC';
+          } else if ([9,10,11].includes(m)){
+            accent = '#FB923C'; // orange
+            accent2 = '#FDBA74';
+          }
+          document.documentElement.style.setProperty('--accent', accent);
+          document.documentElement.style.setProperty('--accent2', accent2);
+        }catch(e){ /* ignore */ }
+      },
       setConditionOverlay(cond){
         const el = utils.el("condOverlay");
         if (!el) return;
@@ -3263,6 +3381,8 @@ if (elec && Number.isFinite(elec.currentCents)){
       apply(){
         theme.applyBaseByTime();
         theme.applyWeatherRefine();
+        // Apply seasonal palette last so it overrides accents for a seasonal look
+        theme.applySeasonal();
       }
     };
 
@@ -3271,8 +3391,9 @@ if (elec && Number.isFinite(elec.currentCents)){
      ***********************************************************************/
     const router = {
       init(){
-        // Visible pages: Today (page0) + Planning (page1) + School (page2) + Quotes (page4)
-        router.visiblePages = [0, 1, 2, 4];
+        // Visible pages: Today (page0) + Planning (page1) + Welcome (page5)
+        // plus the two schedule image pages (page6=ns.jpg, page7=ss.jpg). School schedule (page2) and Quotes (page4) are hidden.
+          router.visiblePages = [0, 1, 5, 6, 7];
         state.pageCount = router.visiblePages.length;
         router.buildDots();
         router.show(0, false);
@@ -3323,6 +3444,12 @@ if (elec && Number.isFinite(elec.currentCents)){
         const activeId = "page" + visiblePages[idx];
         if (activeId === "page4"){
           quotes.next();
+        }
+
+        // Start/stop welcome image carousel when Welcome page is visible
+        const activePageNum = visiblePages[idx];
+        if (typeof welcomeImage !== 'undefined'){
+          if (activePageNum === 5) welcomeImage.start(); else welcomeImage.stop();
         }
 
         if (manual){
@@ -3528,12 +3655,109 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
     /***********************************************************************
      * BOOT (cache first, render, then fetch)
      ***********************************************************************/
+    /* Welcome carousel — preload hyphenated filenames and cross-fade
+       Filenames expected in repo root:
+         - feb-mar.png
+         - apr-may.png
+         - jun-jul.png
+         - aug-sep.png
+         - oct-nov.png
+         - dec-jan.png
+    */
+    const welcomeImage = (function(){
+      const imgs = [
+        "feb-mar.png",
+        "apr-may.png",
+        "jun-jul.png",
+        "aug-sep.png",
+        "oct-nov.png",
+        "dec-jan.png"
+      ];
+      const fallbackSrc = 'welcome.jpg';
+      const intervalMs = 8000;
+      let timer = null;
+      let currentIndex = 0;
+      let imgA = null, imgB = null; // DOM nodes
+      let front = null, back = null; // refs to active/inactive nodes
+
+      function monthToIndexInTz(date){
+        try{
+          const ymd = utils.ymdInTz(date);
+          const month = Number(ymd.slice(4,6));
+          if ([2,3].includes(month)) return 0;
+          if ([4,5].includes(month)) return 1;
+          if ([6,7].includes(month)) return 2;
+          if ([8,9].includes(month)) return 3;
+          if ([10,11].includes(month)) return 4;
+          return 5; // Dec or Jan
+        }catch(e){ return 0; }
+      }
+
+      function preloadAll(){
+        for (const s of imgs){ const i = new Image(); i.src = s; }
+      }
+
+      function setFrontSrc(src){
+        if (!front) return;
+        front.onerror = () => { front.onerror = null; front.src = fallbackSrc; };
+        front.src = src;
+      }
+
+      function swapToIndex(nextIndex){
+        if (!back || !front) return;
+        const src = imgs[nextIndex];
+        back.onerror = () => { back.onerror = null; back.src = fallbackSrc; };
+        back.src = src;
+
+        const doSwap = () => {
+          front.classList.remove('active');
+          back.classList.add('active');
+          // swap refs
+          const tmp = front; front = back; back = tmp;
+          currentIndex = nextIndex;
+        };
+
+        if (back.complete){
+          doSwap();
+        }else{
+          back.onload = () => { doSwap(); back.onload = null; };
+          // fallback timeout: if image doesn't load, still swap to fallback after delay
+          setTimeout(() => { if (!back.onload) return; doSwap(); back.onload = null; }, 1500);
+        }
+      }
+
+      return {
+        apply(){
+          imgA = utils.el('welcomeImgA');
+          imgB = utils.el('welcomeImgB');
+          if (!imgA || !imgB) return;
+          front = imgA; back = imgB;
+          preloadAll();
+          currentIndex = monthToIndexInTz(new Date());
+          setFrontSrc(imgs[currentIndex]);
+        },
+        start(){
+          if (timer) return;
+          // ensure elements exist
+          if (!imgA || !imgB) { this.apply(); if (!imgA || !imgB) return; }
+          timer = setInterval(() => {
+            const next = (currentIndex + 1) % imgs.length;
+            swapToIndex(next);
+          }, intervalMs);
+        },
+        stop(){ if (timer){ clearInterval(timer); timer = null; } },
+        // expose for tests
+        _imgs: imgs
+      };
+    })();
+
     (function boot(){
       cache.load();
       theme.apply();
       health.init();
       router.init();
       iframes.init();
+      welcomeImage.apply();
 
       render.clock();
       render.topTiles();
