@@ -976,19 +976,13 @@
     .school-schedule-subject{ color:#0f172a; }
     .subject-icon{
       display:inline-flex;
-      min-width:2.2em;
-      height:1.65em;
-      padding:0 .28em;
+      width:1.35em;
       margin-right:.35em;
       align-items:center;
       justify-content:center;
-      border:1px solid currentColor;
-      border-radius:.38em;
-      background:rgba(255,255,255,.42);
-      font-family:Arial, Helvetica, sans-serif;
-      font-size:.72em;
-      font-weight:950;
-      letter-spacing:.02em;
+      font-family:"DejaVu Sans", Arial, Helvetica, sans-serif;
+      font-size:1.2em;
+      font-weight:400;
       line-height:1;
       flex:0 0 auto;
     }
@@ -3842,17 +3836,17 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
       days: ["Ma", "Ti", "Ke", "To", "Pe"],
       periods: ["08:15", "09:05", "10:10", "11:00", "12:30", "13:20", "14:20", "15:10", "17:45"],
       icons: {
-        SUK: "FI", SU: "FI", STK: "SV",
-        RUB: "SV", RUA: "SV", ENA: "EN", OAI: "FI",
-        VSKA: "SV", VSKB: "SV", VRAB: "RU",
-        MA: "M", MAL: "M",
-        BI: "BI", GE: "GE", MT: "GE",
-        FY: "PH", FYL: "PH", KE: "CH", KEL: "CH",
-        TE: "&#9829;", UEEV: "RE", UEOR: "RE", UEIS: "RE", UEEL: "ET",
-        HI: "HI", YH: "SS", MU: "&#9835;", KO: "HE",
-        KU: "AR", KUP: "AR", KS: "CR", KT: "CR", KTS: "CR",
-        LI: "PE", LIP: "PE", KA: "KA", KÄ: "KA",
-        OP: "GO", UI: "UI", EIS: "EIS"
+        SUK: "&#9998;", SU: "&#9998;", STK: "&#9993;",
+        RUB: "&#9993;", RUA: "&#9993;", ENA: "&#9993;", OAI: "&#9998;",
+        VSKA: "&#9993;", VSKB: "&#9993;", VRAB: "&#9993;",
+        MA: "&#8721;", MAL: "&#8721;",
+        BI: "&#9827;", GE: "&#9678;", MT: "&#9678;",
+        FY: "&#8734;", FYL: "&#8734;", KE: "&#916;", KEL: "&#916;",
+        TE: "&#9829;", UEEV: "&#8224;", UEOR: "&#8224;", UEIS: "&#8224;", UEEL: "&#9671;",
+        HI: "&#167;", YH: "&#167;", MU: "&#9835;", KO: "&#9832;",
+        KU: "&#9998;", KUP: "&#9998;", KS: "&#9670;", KT: "&#9670;", KTS: "&#9670;",
+        LI: "&#9654;", LIP: "&#9654;", KA: "&#9786;", KÄ: "&#9786;",
+        OP: "&#9733;", UI: "&#9670;", EIS: "&#9670;"
       },
       lessons: [
         [null, "LI", "KO", null, "LI"],
@@ -3910,19 +3904,19 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
     const sadiaSchedule = {
       days: ["Maanantai", "Tiistai", "Keskiviikko", "Torstai", "Perjantai"],
       icons: {
-        "RU/SA": "SV",
+        "RU/SA": "&#9993;",
         MU: "&#9835;",
-        MA: "M",
-        SUK: "FI",
-        YM: "BI",
-        EN: "EN",
-        "UE/ET": "RE",
-        KU: "AR",
-        HI: "HI",
-        KS: "CR",
-        LI: "PE",
-        TT: "IT",
-        "*VALINNAINEN": "OPT"
+        MA: "&#8721;",
+        SUK: "&#9998;",
+        YM: "&#9827;",
+        EN: "&#9993;",
+        "UE/ET": "&#9671;",
+        KU: "&#9998;",
+        HI: "&#167;",
+        KS: "&#9670;",
+        LI: "&#9654;",
+        TT: "&#9638;",
+        "*VALINNAINEN": "&#9733;"
       },
       periods: [
         ["08:15 - 09:00", "-", "RU/SA", "MU", "-", "MA"],
