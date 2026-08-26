@@ -3846,18 +3846,18 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
         OP: "&#128161;", UI: "&#127891;", EIS: "&#127891;"
       },
       lessons: [
-        [null, "Y_LI.9C LAK 2.313", "10: Y_KO.9kl.p 2.138", null, "Y_LI.9C LAK 2.313"],
-        ["Y_SU2.9c LAA 2.313", "Y_LI.9C LAK 2.313", "10: Y_KO.9kl.p 2.138", "Y_RUB1.9C/D PUS 1.304", "Y_LI.9C LAK 2.313"],
-        ["Y_ENA1.9C TOM 2.326", "Y_YH.9C LEM 1.224 B", "Y_GE.9C POH 2.329", "7: Y_KE.9C/D 2.335A", "Y_TE.9c MAT 1.224 B"],
-        ["Y_ENA1.9C TOM 2.326", "Y_YH.9C LEM 1.224 B", "Y_GE.9C POH 2.329", "7: Y_KE.9C/D 2.335A", "15: Y_MA.9C 2.335A"],
-        [null, "Y_SU2.9c RAN 2.313", "Y_SU2.9c RAN 2.315", "Y_MA.9C HAU 2.326", "Y_ENA1.9C TOM 2.326"],
-        ["Y_OP.9c LAP 1.121", "15: Y_MA.9C 2.326", "Y_RUB1.9C/D PUS 1.304", "Y_YH.9C LEM 1.224 B", null],
-        [null, "15: Y_MA.9C 2.326", null, "13: Y_KU.9kl.p 2.131", "Y_vRAB2.9BCDEFG TOM 2.326"],
-        [null, "UI 9 Viherlaakso (lukionahde 1) | UI Zeeshan Khaula", null, "13: Y_KU.9kl.p 2.131", "Y_vRAB2.9BCDEFG TOM 2.326"],
-        [null, null, null, "sURmai09.EIS ylä to 16.15 | Naz Nusrat EIS", null]
+        [null, "LI", "KO", null, "LI"],
+        ["SU2", "LI", "KO", "RUB1", "LI"],
+        ["ENA1", "YH", "GE", "KE", "TE"],
+        ["ENA1", "YH", "GE", "KE", "MA"],
+        [null, "SU2", "SU2", "MA", "ENA1"],
+        ["OP", "MA", "RUB1", "YH", null],
+        [null, "MA", null, "KU", "VRAB2"],
+        [null, "UI", null, "KU", "VRAB2"],
+        [null, null, null, "EIS", null]
       ],
       subjectIcon(lesson){
-        const match = lesson.match(/(?:\d+:\s*)?Y_([A-Z]+)/i) || lesson.match(/\b(UI|EIS)\b/i);
+        const match = lesson.match(/^([A-ZÄ]+\d*)$/i);
         if (!match) return "&#128196;";
         const key = match[1].toUpperCase().replace(/[0-9].*$/, "");
         return this.icons[key] || "&#128196;";
