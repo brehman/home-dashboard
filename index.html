@@ -932,6 +932,96 @@
       color: var(--muted);
     }
 
+    /* Sadia's timetable */
+    .school-schedule{
+      height:100%;
+      width:100%;
+      overflow:auto;
+      padding: 8px;
+    }
+    .school-schedule-grid{
+      min-width:760px;
+      height:100%;
+      display:grid;
+      grid-template-columns: 1.05fr repeat(5, 1fr);
+      grid-template-rows: 52px repeat(6, 1fr);
+      gap:2px;
+      overflow:hidden;
+      border:1px solid rgba(248,250,252,.24);
+      border-radius:18px;
+      background:rgba(248,250,252,.16);
+    }
+    .school-schedule-cell{
+      min-width:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px 10px;
+      background:rgba(2,6,23,.58);
+      font-size:clamp(13px, 1.4vw, 22px);
+      font-weight:800;
+      text-align:center;
+    }
+    .school-schedule-head{
+      background:rgba(37,99,235,.56);
+      font-size:clamp(14px, 1.7vw, 25px);
+      text-transform:uppercase;
+    }
+    .school-schedule-time{
+      background:rgba(15,23,42,.82);
+      color:var(--muted);
+      font-size:clamp(12px, 1.25vw, 19px);
+      white-space:nowrap;
+    }
+    .school-schedule-subject{ color:#0f172a; }
+    .subject-icon{
+      display:inline-flex;
+      width:1.35em;
+      margin-right:.35em;
+      align-items:center;
+      justify-content:center;
+      font-size:1.2em;
+      line-height:1;
+    }
+    .school-schedule-subject[data-subject="-"]{ color:var(--muted); background:rgba(248,250,252,.78); }
+    .school-schedule-subject[data-subject="MA"]{ background:#dbeafe; }
+    .school-schedule-subject[data-subject="RU/SA"]{ background:#fef3c7; }
+    .school-schedule-subject[data-subject="MU"]{ background:#e9d5ff; }
+    .school-schedule-subject[data-subject="SUK"],
+    .school-schedule-subject[data-subject="YM"]{ background:#ecfccb; }
+    .school-schedule-subject[data-subject="EN"],
+    .school-schedule-subject[data-subject="UE/ET"]{ background:#ede9fe; }
+    .school-schedule-subject[data-subject="KU"]{ background:#ffedd5; }
+    .school-schedule-subject[data-subject="KS"]{ background:#fef3c7; }
+    .school-schedule-subject[data-subject="LI"]{ background:#fee2e2; }
+    .school-schedule-subject[data-subject="HI"]{ background:#ffedd5; }
+    .school-schedule-subject[data-subject="TT"]{ background:#cffafe; }
+    .school-schedule-subject[data-subject="*VALINNAINEN"]{ background:#e9d5ff; }
+    .school-schedule-cell.current-day{
+      position:relative;
+      z-index:1;
+      box-shadow: inset 0 0 0 3px #a3e635, 0 0 14px rgba(163,230,53,.55);
+    }
+    .school-schedule-head.current-day{
+      background:#84cc16;
+      color:#17210b;
+    }
+    @media (max-width: 900px){
+      .school-schedule{ padding:4px; }
+      .school-schedule-grid{ min-width:680px; }
+      .school-schedule-cell{ padding:6px 7px; }
+    }
+    #nidaScheduleGrid{ grid-template-rows: 52px repeat(9, 1fr); }
+    .nida-event{
+      background:#bfdbfe;
+      color:#0f172a;
+      line-height:1.2;
+      font-size:clamp(11px, 1.15vw, 17px);
+    }
+    .nida-event-label{ display:block; }
+    .nida-event-room{ color:#3f8b12; font-weight:900; }
+    .nida-empty{ background:rgba(248,250,252,.82); }
+
     /* Page 4 iframe columns */
     /* PAGE 4: Detailed HSL (direct values, no iframes) */
 .routesCols{
@@ -1644,48 +1734,36 @@ html.lite .quotesStage::after{
   </div>
 </section>
 
-<!-- PAGE 7: Nida's schedule image -->
+<!-- PAGE 7: Nida's data-driven schedule -->
 <section class="page" id="page6" aria-label="Nida's schedule">
   <div class="card" style="height:100%;">
     <div class="hdr">
       <h2>Nida's School Schedule</h2>
-      <div class="sub">Image schedule (feb-mar.png / apr-may.png etc.)</div>
+      <div class="sub">Weekly timetable</div>
     </div>
 
     <div class="body"
-         style="height: calc(100% - 54px); display:flex; align-items:center; justify-content:center; padding:0;">
-      
-      <img src="ns.jpg"
-           alt="NS schedule"
-           style="
-             max-width:100%;
-             max-height:100%;
-             object-fit:contain;
-             border-radius:16px;
-           ">
+         style="height: calc(100% - 54px); display:flex; align-items:stretch; justify-content:center; padding:0;">
+      <div class="school-schedule" id="nidaSchedule" aria-label="Nida's weekly school timetable">
+        <div class="school-schedule-grid" id="nidaScheduleGrid"></div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- PAGE 8: Sadia's schedule image -->
+<!-- PAGE 8: Sadia's data-driven schedule -->
 <section class="page" id="page7" aria-label="Sadia's schedule">
   <div class="card" style="height:100%;">
     <div class="hdr">
       <h2>Sadia's School Schedule</h2>
-      <div class="sub">Image schedule (feb-mar.png / apr-may.png etc.)</div>
+      <div class="sub">Weekly timetable</div>
     </div>
 
     <div class="body"
-         style="height: calc(100% - 54px); display:flex; align-items:center; justify-content:center; padding:0;">
-      
-      <img src="ss.jpg"
-           alt="SS schedule"
-           style="
-             max-width:100%;
-             max-height:100%;
-             object-fit:contain;
-             border-radius:16px;
-           ">
+         style="height: calc(100% - 54px); display:flex; align-items:stretch; justify-content:center; padding:0;">
+      <div class="school-schedule" id="sadiaSchedule" aria-label="Sadia's weekly school timetable">
+        <div class="school-schedule-grid" id="sadiaScheduleGrid"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -3751,6 +3829,120 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
       };
     })();
 
+    const nidaSchedule = {
+      days: ["Ma", "Ti", "Ke", "To", "Pe"],
+      periods: ["08:15", "09:05", "10:10", "11:00", "12:30", "13:20", "14:20", "15:10", "17:45"],
+      icons: {
+        LI: "&#128218;", SU: "&#127939;", EN: "&#128172;", YH: "&#128300;", GE: "&#127758;",
+        KO: "&#128218;", RUB: "&#128172;", MA: "&#8862;", KE: "&#129504;", KU: "&#127912;",
+        OP: "&#128161;", TE: "&#128170;", UI: "&#128187;", EIS: "&#127891;"
+      },
+      lessons: [
+        [null, "Y_LI.9C LAK 2.313", "10: Y_KO.9kl.p 2.138", null, "Y_LI.9C LAK 2.313"],
+        ["Y_SU2.9c LAA 2.313", "Y_LI.9C LAK 2.313", "10: Y_KO.9kl.p 2.138", "Y_RUB1.9C/D PUS 1.304", "Y_LI.9C LAK 2.313"],
+        ["Y_ENA1.9C TOM 2.326", "Y_YH.9C LEM 1.224 B", "Y_GE.9C POH 2.329", "7: Y_KE.9C/D 2.335A", "Y_TE.9c MAT 1.224 B"],
+        ["Y_ENA1.9C TOM 2.326", "Y_YH.9C LEM 1.224 B", "Y_GE.9C POH 2.329", "7: Y_KE.9C/D 2.335A", "15: Y_MA.9C 2.335A"],
+        [null, "Y_SU2.9c RAN 2.313", "Y_SU2.9c RAN 2.315", "Y_MA.9C HAU 2.326", "Y_ENA1.9C TOM 2.326"],
+        ["Y_OP.9c LAP 1.121", "15: Y_MA.9C 2.326", "Y_RUB1.9C/D PUS 1.304", "Y_YH.9C LEM 1.224 B", null],
+        [null, "15: Y_MA.9C 2.326", null, "13: Y_KU.9kl.p 2.131", "Y_vRAB2.9BCDEFG TOM 2.326"],
+        [null, "UI 9 Viherlaakso (lukionahde 1) | UI Zeeshan Khaula", null, "13: Y_KU.9kl.p 2.131", "Y_vRAB2.9BCDEFG TOM 2.326"],
+        [null, null, null, "sURmai09.EIS ylä to 16.15 | Naz Nusrat EIS", null]
+      ],
+      subjectIcon(lesson){
+        const match = lesson.match(/(?:\d+:\s*)?Y_([A-Z]+)/i) || lesson.match(/\b(UI|EIS)\b/i);
+        if (!match) return "&#128196;";
+        const key = match[1].toUpperCase().replace(/[0-9].*$/, "");
+        return this.icons[key] || "&#128196;";
+      },
+      render(){
+        const grid = utils.el("nidaScheduleGrid");
+        if (!grid) return;
+        const now = new Date();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+        const formatDate = (date) => `${date.getDate()}.${String(date.getMonth() + 1).padStart(2, "0")}.`;
+        const headers = ["Aika", ...this.days.map((day, index) => {
+          const date = new Date(monday);
+          date.setDate(monday.getDate() + index);
+          return `${day} ${formatDate(date)}`;
+        })].map((day, index) => `<div class="school-schedule-cell school-schedule-head" data-column="${index}">${day}</div>`).join("");
+        const rows = this.periods.map((time, periodIndex) => {
+          const timeCell = `<div class="school-schedule-cell school-schedule-time">${time}</div>`;
+          const lessonCells = this.lessons[periodIndex].map((lesson, dayIndex) => {
+            if (!lesson) return `<div class="school-schedule-cell nida-empty" data-column="${dayIndex + 1}">-</div>`;
+            const parts = lesson.split(" |");
+            const label = parts[0];
+            const room = parts[1] ? `<span class="nida-event-room">${parts[1]}</span>` : "";
+            return `<div class="school-schedule-cell nida-event" data-column="${dayIndex + 1}"><span class="subject-icon" aria-hidden="true">${this.subjectIcon(lesson)}</span><span class="nida-event-label">${label}${room ? `<br>${room}` : ""}</span></div>`;
+          }).join("");
+          return timeCell + lessonCells;
+        }).join("");
+        utils.setHTML(grid, headers + rows);
+      },
+      apply(){
+        const schedule = utils.el("nidaSchedule");
+        if (!schedule) return;
+        this.render();
+        const day = new Date().getDay();
+        if (day < 1 || day > 5) return;
+        utils.qsa(`[data-column="${day}"]`, schedule).forEach((cell) => cell.classList.add("current-day"));
+        schedule.setAttribute("data-current-day", String(day));
+      }
+    };
+
+    const sadiaSchedule = {
+      days: ["Maanantai", "Tiistai", "Keskiviikko", "Torstai", "Perjantai"],
+      icons: {
+        "RU/SA": "&#128218;",
+        MU: "&#9835;",
+        MA: "&#8862;",
+        SUK: "&#127939;",
+        YM: "&#127810;",
+        EN: "&#128172;",
+        "UE/ET": "&#8857;",
+        KU: "&#127912;",
+        HI: "&#127963;",
+        KS: "&#9962;",
+        LI: "&#9829;",
+        TT: "&#128421;",
+        "*VALINNAINEN": "&#9733;"
+      },
+      periods: [
+        ["08:15 - 09:00", "-", "RU/SA", "MU", "-", "MA"],
+        ["09:05 - 09:50", "SUK", "MA", "YM", "SUK", "KU"],
+        ["10:10 - 10:55", "EN", "UE/ET", "MA", "YM", "KU"],
+        ["11:45 - 12:15", "MA", "EN", "SUK", "HI", "SUK"],
+        ["12:30 - 13:15", "KS", "LI", "SUK", "*VALINNAINEN", "RU/SA"],
+        ["13:15 - 14:00", "KS", "LI", "TT", "*VALINNAINEN", "-"]
+      ],
+      render(){
+        const grid = utils.el("sadiaScheduleGrid");
+        if (!grid) return;
+        const header = ["Aika", ...this.days]
+          .map((day, index) => `<div class="school-schedule-cell school-schedule-head" data-column="${index}">${day}</div>`)
+          .join("");
+        const rows = this.periods.map((period) => {
+          const time = `<div class="school-schedule-cell school-schedule-time">${period[0]}</div>`;
+          const subjects = period.slice(1).map((subject, index) => {
+            const icon = this.icons[subject] ? `<span class="subject-icon" aria-hidden="true">${this.icons[subject]}</span>` : "";
+            return `<div class="school-schedule-cell school-schedule-subject" data-subject="${subject}" data-column="${index + 1}">${icon}<span>${subject}</span></div>`;
+          }
+          ).join("");
+          return time + subjects;
+        }).join("");
+        utils.setHTML(grid, header + rows);
+      },
+      apply(){
+        const schedule = utils.el("sadiaSchedule");
+        if (!schedule) return;
+        this.render();
+        const day = new Date().getDay();
+        if (day < 1 || day > 5) return;
+        utils.qsa(`[data-column="${day}"]`, schedule).forEach((cell) => cell.classList.add("current-day"));
+        schedule.setAttribute("data-current-day", String(day));
+      }
+    };
+
     (function boot(){
       cache.load();
       theme.apply();
@@ -3758,6 +3950,8 @@ if (elecTomorrow && CONFIG.ELECTRICITY.embedTomorrow){
       router.init();
       iframes.init();
       welcomeImage.apply();
+      nidaSchedule.apply();
+      sadiaSchedule.apply();
 
       render.clock();
       render.topTiles();
